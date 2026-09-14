@@ -16,7 +16,7 @@ int main(void) {
   for (int i = 1; i <= n; i++) {
     int s = i * i;  // Compute the square of i
     // Print i, square, and difference from previous square
-    printf("%d\t%d\t%d\n", i, s, s - p);
+    printf("%d\t%d\t%d\r\n", i, s, s - p);
     p = s;  // Update previous square value
   }
 
