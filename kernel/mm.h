@@ -1,11 +1,10 @@
 #ifndef _MM_H
 #define _MM_H
 
-#define KERNEL_STACK (1 << 22)    // 0x400'000 = 4 MB
-#define USER_STACK_TOP (1 << 23)  // 0x800'000
-
 #ifndef __ASSEMBLER__
 
+// Function to zero out a block of memory, implemented in
+// assembly in `mm.S`.
 void memzero(void* ptr, unsigned long len);
 
 #endif

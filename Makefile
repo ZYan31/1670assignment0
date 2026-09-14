@@ -1,6 +1,8 @@
 .PHONY: clean format
 
 HOST_OS = $(shell uname -s)
+HOST_ARCH = $(shell uname -m)
+TOOL_LDFLAGS :=
 
 ifndef IN_CONTAINER
 ifneq ("$(wildcard /etc/image-version)","")
@@ -15,9 +17,10 @@ ifndef TOOLPREFIX
 ifeq ($(HOST_OS), Darwin)
 # MacOS
 TOOLPREFIX = aarch64-elf-
+TOOL_LDFLAGS += -Wl,-pie,--no-dynamic-linker
 else
 # Linux/Windows
-ifneq ($(shell uname -m), aarch64)
+ifneq ($(HOST_ARCH), aarch64)
 TOOLPREFIX = aarch64-linux-gnu-
 endif
 endif
@@ -28,6 +31,10 @@ GCC = $(TOOLPREFIX)gcc
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 PYTHON ?= python3
+
+MAKEDIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+IMGNAME = weenix-ubuntu24
+CONTNAME = weenix-container
 
 QEMU ?= qemu-system-aarch64
 
@@ -55,6 +62,16 @@ ASMFLAGS = -g
 
 K = kernel
 U = user
+ULIB = user/lib
+
+# Find all the source files for user code
+USRCS  := $(wildcard $(U)/*.c)
+UELFS  := $(USRCS:.c=.elf)
+UOBJS  := $(patsubst $(U)/%.elf,$(K)/%_kproc.o,$(UELFS))
+
+ULIBSRCS := $(wildcard $(ULIB)/*.c)
+ULIBOBJS := $(ULIBSRCS:.c=.o)
+UHDRS    := $(wildcard $(U)/*.h) $(wildcard $(ULIB)/*.h)
 
 # Find all the source files for kernel code
 KSRCS  := $(wildcard $(K)/*.c $(K)/drivers/*.c)
@@ -64,13 +81,16 @@ KOBJS  := $(KASM:%.S=%.o) $(KSRCS:%.c=%.o)
 DEPSDIR = .deps
 DEPS := $(shell find $(DEPSDIR) -name '*.d' 2>/dev/null)
 
-all: kernel8.img
+all: kernel8.img armstub.bin
 
 clean:
 	rm -rf kernel8.img
+	rm -rf $(K)/*.elf
 	find $(K) -name *.o -delete
-	rm -f bgcolor.bin
 	rm -rf $(DEPSDIR)
+	rm -f $(UOBJS)
+	rm -f $(U)/u_klib.h
+	rm -f armstub.bin
 
 format:
 	find . -name *.[c,h] | xargs clang-format -i
@@ -83,19 +103,61 @@ endif
 # kernel files
 ###################
 
-$(K)/bgcolor.o: $(K)/bgcolor.c
-	mkdir -p $(@D)
-	$(GCC) $(CFLAGS) -MMD -Ikernel -c $< -o $@
+$(K)/%.o: $(K)/%.c
+	mkdir -p $(@D) $(DEPSDIR)/$(K)/$(*D)
+	$(GCC) $(CFLAGS) -MMD -MF $(DEPSDIR)/$(K)/$*.d -Ikernel -c $< -o $@
 
-# Re-create the kernel image, replacing the contents of the .bgcolor
-# section with our new version
-OBJCOPY_ARGS = --update-section .bgcolor=bgcolor.bin
-bgcolor.bin: $(K)/bgcolor.o
-	$(OBJCOPY) $(K)/bgcolor.o --dump-section .bgcolor=bgcolor.bin
-	@touch bgcolor.bin # Create a blank file if does not exist
+$(K)/%.o: $(K)/%.S
+	mkdir -p $(DEPSDIR)/$(K)/$(*D)
+	$(GCC) $(ASMFLAGS) -MMD -MF $(DEPSDIR)/$(K)/$*.d -c $< -o $@
 
-kernel8.img: $(K)/kernel8.elf bgcolor.bin
-	$(OBJCOPY) $(K)/kernel8.elf -O binary $(OBJCOPY_ARGS) kernel8.img
+kernel8.img: $(KOBJS) $(UOBJS)
+	$(LD) -T kernel/linker.ld -o $(K)/kernel8.elf $(KOBJS) $(UOBJS)
+	$(OBJCOPY) $(K)/kernel8.elf -O binary kernel8.img
+
+
+###################
+# bootloader
+###################
+
+# Bootloader for the Raspberry Pi 3 that sets up tick counter and other hardware configuration.
+# The firmware loads this at address 0x0, and it eventually hands over control to the code in
+# boot.S.
+armstub.bin: bootloader/armstub.S
+	$(GCC) $(ASMFLAGS) -c $< -o bootloader/armstub.o
+	# Force linker to put the .text segment at address 0x0
+	$(LD) -Ttext=0x0 -o bootloader/armstub.elf bootloader/armstub.o
+	$(OBJCOPY) bootloader/armstub.elf -O binary $@
+
+
+###################
+# user programs
+###################
+
+# Generate trampoline header file
+$(U)/u_klib.h:
+	$(PYTHON) $(U)/gen_klib_header.py > $@
+
+# Compile user library files into .o files
+$(ULIB)/%.o: $(ULIB)/%.c $(UHDRS) $(U)/u_klib.h $(BUILDSTAMP)
+	mkdir -p $(DEPSDIR)/$(ULIB)
+	$(GCC) $(CFLAGS) -I$(U) -I$(ULIB) -MMD -MF $(DEPSDIR)/$(ULIB)/$*.d -c $< -o $@
+
+# Compile user programs into .elf files (ELF executables)
+# -e main: set entry point to 'main'
+# -I$(U) -I$(ULIB): include user/ and user/lib directories for headers
+# -static: disable dynamic linking
+# -static-pie: create a position-independent executable
+# -Wl passes options to the linker, specifically:
+#  -nmagic: avoid page alignment of segments in ELF executables (ARM64 requires 64kB alignment, which wastes a lot of space)
+#  -T $(U)/procs.ld: use custom linker script to define memory layout
+$(U)/%.elf: $(U)/%.c $(ULIBOBJS) $(U)/u_klib.h
+	$(GCC) $(CFLAGS) -e main -I$(U) -I$(ULIB) -static-pie $(TOOL_LDFLAGS) -Wl,-nmagic,-T,$(U)/procs.ld -o $@ $^
+
+# Turn ELF executable into an object file, so that we can link it into the kernel executable.
+$(K)/%_kproc.o: $(U)/%.elf
+	$(OBJCOPY) -I binary $< -O elf64-littleaarch64 -B aarch64 $@ --rename-section .data=.elf_executables,alloc,load,readonly,data,contents
+
 
 ###################
 # QEMU
