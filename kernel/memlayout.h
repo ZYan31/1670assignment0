@@ -11,7 +11,7 @@
 
 // Location of the initial kernel stack in physical memory.
 // Must be 16-byte aligned.
-// #define INITIAL_KERNEL_STACK YOUR_CHOSEN_VALUE
+#define INITIAL_KERNEL_STACK 0x400000
 
 // Peripherals are mapped starting at 0x3F00'0000, giving 1 MB for I/O memory
 // Note that the documentation lists addresses starting at 0x7E00'0000. This is
