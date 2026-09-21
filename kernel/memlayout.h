@@ -19,7 +19,6 @@
 // the SoC's address space at 0x3F00'0000
 #define PERIPHERALS_BASE 0x3F000000
 #define PERIPHERALS_LIMIT 0x3FFFFFFF
-
 // Trampoline to user-reachable functions (like yield or printf).
 // This is essentially an array of function pointers at a known location, so
 // that programs can use these functions as a library.
@@ -29,7 +28,7 @@
 // following those pointers (even though they weren't compiled together with
 // the kernel).
 // TODO: you'll need to change F_BASE in Quest 3 of Project 1.
-#define F_BASE 0x0
+#define F_BASE 0x00800000
 #define F_VPRINTF (F_BASE - sizeof(void*))
 
 #endif  // _MEMLAYOUT_H

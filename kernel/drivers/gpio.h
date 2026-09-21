@@ -12,8 +12,8 @@
 // GPIO Function Select Registers (GPFSELn): these select what function is
 // mapped to each GPIO pin.
 // See table on p. 102 and p. 91ff of datasheet.
-#define GPFSEL0 (PERIPHERALS_BASE + 0x0)  // pins 0-9
-#define GPFSEL1 (PERIPHERALS_BASE + 0x0)  // pins 10-19
+#define GPFSEL0 (PERIPHERALS_BASE + 0x200000)  // pins 0-9
+#define GPFSEL1 (PERIPHERALS_BASE + 0x200004)  // pins 10-19
 
 // GPIO Pin Up/Down Enable Register (GPPUD): this controls whether pins are
 // enabled for "pull-up" or "pull-down", which sets the default voltage level
@@ -21,11 +21,11 @@
 // See p. 90, §6.1 of datasheet. Note that addresses starting with 0x7E...
 // need translating to 0x3F... to be accessible to the CPU.
 // Register documentation for GPUUD on p. 100f, §6.1.
-#define GPPUD (PERIPHERALS_BASE + 0x0)
+#define GPPUD (PERIPHERALS_BASE + 0x200094)
 // GPIO Pin Up/Down Enable Clock Registers (GPPUDCLKn): these control the
 // actually pull-up/pull-down state of the pins, based on the value set in
 // GPPUD. Make sure to read the text on p. 101 (§6.1) of the datasheet to
 // understand how to use GPUUD and GPPUDCLKn together correctly.
-#define GPPUDCLK0 (PERIPHERALS_BASE + 0x0)
+#define GPPUDCLK0 (PERIPHERALS_BASE + 0x200098)
 
 #endif  // _DRIVERS_GPIO_H

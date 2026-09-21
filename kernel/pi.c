@@ -87,11 +87,11 @@
  */
 
 /* Number of digits AFTER the decimal point. */
-#define PI_DIGITS 1000
+#define PI_DIGITS 300
 
 /* Set to 1 to print the result, 0 to compute silently (value stays in memory).
  */
-#define PI_PRINT 0
+#define PI_PRINT 1
 /* How many digits to print per line. */
 #define LINE_LEN 134
 
@@ -213,6 +213,11 @@ static void print_pi(void) {
       printf("\r\n");
     }
   }
+  //testing
+  printf("d=%d u=%u x=%x lx=%lx p=%p c=%c s=%s lit=%%\r\n",
+         -42, 42u, 255, 0xdeadbeefUL, (void*)0x1234, 'Z', "hello");
+  printf("%!uunderlined%!r normal %!f1font2%!f0 back\r\n");
+  printf("%!p4squished 16.5cpi %!p5wiiide 5cpi %!p1normal%!v2 8lpi%!v0\r\n");
   printf("\r\n");
 }
 #endif
