@@ -87,7 +87,7 @@
  */
 
 /* Number of digits AFTER the decimal point. */
-#define PI_DIGITS 300
+#define PI_DIGITS 1000
 
 /* Set to 1 to print the result, 0 to compute silently (value stays in memory).
  */

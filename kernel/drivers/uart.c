@@ -25,10 +25,10 @@ void gpio_init() {
 
 void uart_init() {
     mmio_write32(UART_CR, 0); //disable it
-    // mmio_write32(UART_IBRD, 26); // 115200 baud (QEMU): 48e6/(16*115200)=26.04
-    // mmio_write32(UART_FBRD, 3);  // frac: round(0.04*64)=3
-    mmio_write32(UART_IBRD, 2500); // 1200 baud (DWP-230): 48e6/(16*1200)=2500
-    mmio_write32(UART_FBRD, 0);    // no fractional part
+    mmio_write32(UART_IBRD, 26); // 115200 baud (QEMU): 48e6/(16*115200)=26.04
+    mmio_write32(UART_FBRD, 3);  // frac: round(0.04*64)=3
+    //mmio_write32(UART_IBRD, 2500); // 1200 baud (DWP-230): 48e6/(16*1200)=2500
+    //mmio_write32(UART_FBRD, 0);    // no fractional part
     mmio_write32(UART_LCRH, 0b01110000); // 8N1, no parity (bit4 FEN, bits5-6 WLEN=8) - DWP-230 wants 8 data / no parity / 1 stop
     mmio_write32(UART_CR, (0b1 << 15 | 0b1 << 9 | 0b1 << 8 | 0b1)); // 010000001100000000
 }
