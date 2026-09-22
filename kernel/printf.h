@@ -17,4 +17,7 @@ void printf(const char* fmt, ...);
 // Same as printf, but takes an already-started va_list.
 void vprintf(const char* fmt, va_list args);
 
+// Print a message like printf, then halt the machine forever (never returns).
+void panic(const char* fmt, ...);
+
 #endif  // _PRINTF_H

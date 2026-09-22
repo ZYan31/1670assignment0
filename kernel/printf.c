@@ -183,8 +183,17 @@ void vprintf(const char* fmt, va_list args) {
 }
 
 void printf(const char* fmt, ...) {
-  va_list args; // 
+  va_list args; //
   va_start(args, fmt);
   vprintf(fmt, args);
   va_end(args);
+}
+
+void panic(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+  for (;;) {
+  }  // halt: no OS to return to
 }

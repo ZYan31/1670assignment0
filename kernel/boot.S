@@ -15,7 +15,7 @@ processor0:
     sub x1, x1, x0          // Compute len of .bss segment by x1 - x0
     bl memzero              // Zero out the .bss segment of global variables
     mov sp, INITIAL_KERNEL_STACK
-    bl pi_main
+    bl kernel_main
 
 loop: 
 	b 	loop
