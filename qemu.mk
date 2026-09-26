@@ -49,21 +49,21 @@ GDB_BANNER = printf '%s\n' \
 
 
 # Default QEMU target:  disable display mode and run directly in terminal
-qemu: kernel8.img
+qemu: kernel8.img procs.gdb
 	@$(if $(GDB_MODE),$(GDB_BANNER))
 	$(QEMU) $(QEMU_OPTS) $(QEMU_OPTS_SERIAL) -nographic
 
-qemu-verbose: kernel8.img
+qemu-verbose: kernel8.img procs.gdb
 	$(QEMU) $(QEMU_OPTS) $(QEMU_OPTS_SERIAL) -nographic $(QEMU_OPTS_VERBOSE)
 
 # Run with the framebuffer display enabled.
 # This opens a display window showing the framebuffer
 # Serial output still goes to stdio
-qemu-fb: kernel8.img
+qemu-fb: kernel8.img procs.gdb
 	@$(if $(GDB_MODE),$(GDB_BANNER))
 	$(QEMU) $(QEMU_OPTS) $(QEMU_OPTS_FB) $(QEMU_OPTS_SERIAL)
 
-qemu-ws: kernel8.img
+qemu-ws: kernel8.img procs.gdb
 ifeq ($(CONSOLE),ws)
 	@echo "***************************************************************"
 	@echo "** Starting websocket connections; launch web view to start VM"

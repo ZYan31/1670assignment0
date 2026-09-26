@@ -19,6 +19,14 @@
 // the SoC's address space at 0x3F00'0000
 #define PERIPHERALS_BASE 0x3F000000
 #define PERIPHERALS_LIMIT 0x3FFFFFFF
+
+// "ARM local peripherals" are those peripherals that sit on the ARM CPU
+// itself, rather than on the larger RPi SoC (e.g., the GPIO pins are an SoC
+// peripheral, but the per-core timer interrupt routing is an ARM local
+// peripheral). They are mapped starting at 0x4000'0000, right above the SoC
+// peripherals, and are documented separately from them -- see Appendix B.
+#define ARM_LOCAL_PERIPHERALS_BASE 0x40000000
+
 // Trampoline to user-reachable functions (like yield or printf).
 // This is essentially an array of function pointers at a known location, so
 // that programs can use these functions as a library.

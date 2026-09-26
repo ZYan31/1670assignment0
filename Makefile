@@ -30,6 +30,7 @@ endif
 GCC = $(TOOLPREFIX)gcc
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
+STRIP = $(TOOLPREFIX)strip
 PYTHON ?= python3
 
 MAKEDIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -78,10 +79,11 @@ KSRCS  := $(wildcard $(K)/*.c $(K)/drivers/*.c)
 KASM   := $(wildcard $(K)/*.S)
 KOBJS  := $(KASM:%.S=%.o) $(KSRCS:%.c=%.o)
 
+OBJDIR = obj
 DEPSDIR = .deps
 DEPS := $(shell find $(DEPSDIR) -name '*.d' 2>/dev/null)
 
-all: kernel8.img armstub.bin
+all: kernel8.img armstub.bin procs.gdb
 
 clean:
 	rm -rf kernel8.img
@@ -91,6 +93,9 @@ clean:
 	rm -f $(UOBJS)
 	rm -f $(U)/u_klib.h
 	rm -f armstub.bin
+	rm -f bootloader/armstub.o bootloader/armstub.elf
+	rm -rf $(OBJDIR)
+	rm -f procs.gdb
 
 format:
 	find . -name *.[c,h] | xargs clang-format -i
@@ -135,7 +140,7 @@ armstub.bin: bootloader/armstub.S
 ###################
 
 # Generate trampoline header file
-$(U)/u_klib.h:
+$(U)/u_klib.h: $(K)/memlayout.h
 	$(PYTHON) $(U)/gen_klib_header.py > $@
 
 # Compile user library files into .o files
@@ -151,13 +156,20 @@ $(ULIB)/%.o: $(ULIB)/%.c $(UHDRS) $(U)/u_klib.h $(BUILDSTAMP)
 # -Wl passes options to the linker, specifically:
 #  -nmagic: avoid page alignment of segments in ELF executables (ARM64 requires 64kB alignment, which wastes a lot of space)
 #  -T $(U)/procs.ld: use custom linker script to define memory layout
-$(U)/%.elf: $(U)/%.c $(ULIBOBJS) $(U)/u_klib.h
+$(U)/%.elf: $(U)/%.c $(ULIBOBJS) $(U)/u_klib.h | $(OBJDIR)
 	$(GCC) $(CFLAGS) -e main -I$(U) -I$(ULIB) -static-pie $(TOOL_LDFLAGS) -Wl,-nmagic,-T,$(U)/procs.ld -o $@ $^
+	@cp $@ $(OBJDIR)/$(notdir $@) # Save a copy for GDB
 
 # Turn ELF executable into an object file, so that we can link it into the kernel executable.
 $(K)/%_kproc.o: $(U)/%.elf
+	$(STRIP) --strip-unneeded $<
 	$(OBJCOPY) -I binary $< -O elf64-littleaarch64 -B aarch64 $@ --rename-section .data=.elf_executables,alloc,load,readonly,data,contents
 
+procs.gdb: kernel8.img
+	$(PYTHON) $(U)/gen_user_symbols.py -t $(TOOLPREFIX) -o $@ kernel/kernel8.elf $(OBJDIR)
+
+$(OBJDIR):
+	mkdir -p $@
 
 ###################
 # QEMU
