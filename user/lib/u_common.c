@@ -13,6 +13,10 @@ void printf(const char* fmt, ...) {
   va_end(args);
 };
 
+void yield(){
+  (*(void (**)(void))F_YIELD)();
+}
+
 void exit() {
   return;
 }

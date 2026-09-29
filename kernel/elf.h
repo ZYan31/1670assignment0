@@ -54,8 +54,7 @@ enum e_machine {
 
 struct elf_header {
   uint8 e_ident[EI_NIDENT];  // identification number (see above)
-  uint16
-      e_type;  // object file (none, relocatable, executable, shared, core...)
+  uint16 e_type;  // object file (none, relocatable, executable, shared, core...)
   uint16 e_machine;    // architecture (none, AT&T, SPARC, Intel, Motorola...)
   uint32 e_version;    // object file version (0: invalid, 1: current)
   uint64 e_entry;      // entry point (usually address of the _start symbol)
@@ -126,5 +125,10 @@ void print_elf_prog_header(const struct elf_prog_header*);
 // Load an ELF executable (currently stored in memory at ehdr) into process
 // memory starting at the given physical address (pa_start).
 void* load_elf(struct elf_header* ehdr, void* pa_start);
+
+// Load an ELF into the process' region (PROC_START + pid*PROC_SIZE) and record
+// its entry point in the descriptor.
+struct proc;
+void load_elf_into_proc(struct elf_header* ehdr, struct proc* proc);
 
 #endif  // __ELF_H

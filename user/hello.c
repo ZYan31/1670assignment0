@@ -18,7 +18,7 @@
 int main(void) {
   for (;;) {
     printf("Process hello: before yield\r\n");
-    // yield();
+    yield();
     printf("Process hello: after yield\r\n");
   }
 

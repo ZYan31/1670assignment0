@@ -16,7 +16,7 @@ int main(void) {
 
   for (;;) {
     printf("Process counter: %d\r\n", ctr++);
-    // yield();
+    yield();
   }
 
   exit();

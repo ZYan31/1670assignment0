@@ -5,6 +5,7 @@
 #include "u_types.h"
 
 void printf(const char* fmt, ...);
+void yield();
 void exit();
 
 #endif  // __LIB_U_COMMON_H

@@ -38,6 +38,7 @@
 // TODO: you'll need to change F_BASE in Quest 3 of Project 1.
 #define F_BASE 0x01000000
 #define F_VPRINTF (F_BASE - sizeof(void*))
-#define PROC_START 0xA0000
+#define F_YIELD (F_BASE - 2*sizeof(void*))
+#define PROC_START 0x100000
 
 #endif  // _MEMLAYOUT_H
