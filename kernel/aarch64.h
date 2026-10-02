@@ -98,7 +98,7 @@
 //   the hardware sets PSTATE.I=1 (IRQs masked inside the kernel)
 // Our initial value masks all interrupts and returns to EL1, but you will
 //   need to change this as you implement Project 2.
-#define SPSR_PROC (SPSR_EL1h | SPSR_MASK_ALL)
+#define SPSR_PROC (SPSR_EL1h | (0b101 << 6))  // mask FIQ+SError, IRQ ENABLED (preemptible)
 
 // Exception Syndrome Register (ESR) definitions. This register captures
 // information about exceptions that occur, and is used by the kernel to
