@@ -6,6 +6,7 @@
 #include "types.h"
 #include "utils.h"
 #include "init.h"
+#include "types.h"
 #include "proc.h"
 #include "elf.h"
 #include "exceptions.h"

@@ -7,6 +7,8 @@
 #include "drivers/timer.h"
 #include "proc.h"
 
+int64 timer;
+
 void handle_sync_exception(context_t* ctx){
     uint64 esr;
     uint64 elr;
@@ -25,12 +27,30 @@ void handle_sync_exception(context_t* ctx){
 };
 
 void handle_interrupt(context_t* ctx){
+    //tracker
+    timer +=1;
+    //if(timer %100 ==0 ) printf("100 ticks have passed: %d", timer);
+    if (timer == 1000) {   // ~10 s at a 10 ms quantum: dump the CPU split once
+        printf("\r\n=== CPU over %d ticks ===\r\n", (int)timer);
+        for (uint32 i = 0; i < NPROC; i++)
+            if (process_table[i].state != UNUSED)
+                printf("%s: %d ticks (%d%%)\r\n", process_table[i].procName,
+                       (int)process_table[i].cpu_ticks,
+                       (int)(process_table[i].cpu_ticks * 100 / timer));
+    }
+
+    //actual
     uint64 source = mmio_read32(CORE0_INTERRUPT_SOURCE);
     if (source & (0b1 << 1)){
+        // This tick belonged to the process that was running.
+        current_process->cpu_ticks++;
+        // Age every waiting process (not the one running, still RUNNING here).
+        for (uint32 i = 0; i < NPROC; i++)
+            if (process_table[i].state == RUNNABLE)
+                process_table[i].age += AGING_RATE;
         current_process->context = ctx;
-        current_process->state = RUNNABLE; 
-        //printf("tick!\r\n");          // stage-1 test
-        timer_interrupt();            // re-arms the timer
+        current_process->state = RUNNABLE;
+        timer_interrupt();            // re-arm -> scheduler -> pick_next -> resume (no return)
     } else {
         panic("unexpected interrupt source: %p", (void*)(uint64)source);
     }

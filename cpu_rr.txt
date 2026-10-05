@@ -1,0 +1,5 @@
+=== CPU over 1000 ticks ===
+hello: 0 ticks (0%)
+counter: 0 ticks (0%)
+primecheck: 999 ticks (99%)
+Process hello: after yield

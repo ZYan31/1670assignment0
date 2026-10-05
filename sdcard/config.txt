@@ -1,0 +1,8 @@
+# CS1670 bare-metal boot config for Raspberry Pi 3B (64-bit)
+# UART lines match the known-good Alpine usercfg.txt on this card.
+arm_64bit=1
+kernel=kernel8.img
+armstub=armstub.bin
+
+enable_uart=1
+dtoverlay=disable-bt

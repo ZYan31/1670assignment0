@@ -16,6 +16,9 @@ struct proc *allocproc(){
             // Each process owns a fixed 64 KiB slice of RAM keyed by its PID.
             // The stack grows down, so start sp at the top of that slice.
             p -> stack = (void*)((uint64)PROC_START + (uint64)(i + 1) * PROC_SIZE);
+            // Earlier-loaded procs (interactive hello/counter) rank above the
+            // later CPU hog (primecheck); none starts at 0, so aging can lift it.
+            p -> priority = (i+1) * PRIORITY_SCALE;
             break;
         }
     }

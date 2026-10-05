@@ -3,7 +3,7 @@
 
 // Desired scheduling quantum. CNTFRQ is in ticks/second, so ticks-per-quantum
 // = freq / (1000 / QUANTUM_MS). We keep it as a divisor to stay in integers.
-#define QUANTUM_MS 50                 // 50 ms (within the handout's 10-100 ms range)
+#define QUANTUM_MS 10                 // 50 ms (within the handout's 10-100 ms range)
 
 static void (*timer_callback)(void); // what to run on each tick (the scheduler)
 static uint64 ticks_per_quantum;     // CNTFRQ-derived count for one quantum
