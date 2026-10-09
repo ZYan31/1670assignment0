@@ -2,6 +2,7 @@
 
 #include "drivers/uart.h"
 #include "types.h"
+#include "interrupts.h"   // disable_interrupts / restore_interrupts (Quest 4 Part E)
 
 // Convert an unsigned 64-bit value to a string in `base` (10 or 16), writing a
 // NUL-terminated result into `buf` and returning its length (excluding NUL).
@@ -37,7 +38,7 @@ static void send_padded(const char* buf, int len, int width) {
   uart_send_string(buf);
 }
 
-void vprintf(const char* fmt, va_list args) {
+static void vprintf_inner(const char* fmt, va_list args) {
   char buf[32];
 
   while (*fmt != '\0') {
@@ -180,6 +181,14 @@ void vprintf(const char* fmt, va_list args) {
       }
     }
   }
+}
+
+// Part E: emit a whole message without being preempted mid-line. Mask IRQs
+// around the output path and restore the caller's previous state afterward.
+void vprintf(const char* fmt, va_list args) {
+  unsigned long flags = disable_interrupts();
+  vprintf_inner(fmt, args);
+  restore_interrupts(flags);
 }
 
 void printf(const char* fmt, ...) {
