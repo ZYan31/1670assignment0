@@ -52,12 +52,12 @@ void kernel_main(void) {
     printf("Starting pid 0 (hello)");
     console_init();
 
-    // //NORMAL kernel
-    // init(); 
-    // timer_init(scheduler);
-    // print_process_table();
-    // current_process = &process_table[0];
-    // restore_context(process_table[0].context);
+    //NORMAL kernel
+    init(); 
+    timer_init(scheduler);
+    print_process_table();
+    current_process = &process_table[0];
+    restore_context(process_table[0].context);
     
     // //TEST RINGBUFFER
     // printf("ringbuf test - type something\r\n");
