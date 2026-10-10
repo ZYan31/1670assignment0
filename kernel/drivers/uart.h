@@ -3,6 +3,8 @@
 
 #include "memlayout.h"
 #include "types.h"
+#include "printf.h"
+#include "console.h"
 
 // PL011 UART (p. 175ff, §13; note errata)
 //
@@ -19,11 +21,18 @@
 #define UART_FBRD (UART_BASE + 0x28) 
 #define UART_LCRH (UART_BASE + 0x2c) 
 #define UART_CR (UART_BASE + 0x30) 
+#define UART_IMSC (UART_BASE + 0x38)
+#define UART_MIS (UART_BASE + 0x40)
+#define UART_ICR (UART_BASE + 0x44)
+#define UART_IFLS (UART_BASE + 0x34)
+#define RXI (1 << 4)
+#define RTI (1 << 6)
 
 // Declare public functions like `uart_init` here!
 void gpio_init(void);
 void uart_init(void);
 void uart_send(char c);
 void uart_send_string(const char* s);
+void uart_interrupt(void);
 
 #endif  // _DRIVERS_UART_H

@@ -22,6 +22,8 @@ else
 # Linux/Windows
 ifneq ($(HOST_ARCH), aarch64)
 TOOLPREFIX = aarch64-linux-gnu-
+else
+TOOLPREFIX = ""
 endif
 endif
 endif

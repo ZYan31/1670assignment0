@@ -1,5 +1,6 @@
 #include "timer.h"
 #include "types.h"
+#include "uart.h"
 
 // Desired scheduling quantum. CNTFRQ is in ticks/second, so ticks-per-quantum
 // = freq / (1000 / QUANTUM_MS). We keep it as a divisor to stay in integers.

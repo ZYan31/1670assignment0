@@ -14,6 +14,7 @@
 #include "scheduling.h"
 #include "drivers/timer.h"
 #include "drivers/timer.h"
+#include "console.h"  
 
 typedef void (*vprintf_fn)(const char*, va_list);
 //making a printf_fn that is the right space/size for the pointer.
@@ -45,17 +46,31 @@ void kernel_main(void) {
     gpio_init();
     klib_init();
     printf("Hello world from Duckie!\r\n");
-    init();
     exception_init(exception_vector_table);
     enable_interrupt_controller();
     enable_interrupts();
-    timer_init(scheduler);
-    print_process_table();
     printf("Starting pid 0 (hello)");
+    console_init();
+
+    // //NORMAL kernel
+    // init(); 
+    // timer_init(scheduler);
+    // print_process_table();
+    // current_process = &process_table[0];
+    // restore_context(process_table[0].context);
+    
+    // //TEST RINGBUFFER
+    // printf("ringbuf test - type something\r\n");
+    // while (1) {
+    //     while (!rb_isEmpty(&input_buf)) {
+    //         printf("%c", rb_pop(&input_buf));
+    //     }
+    //     asm volatile("wfi");
+    // }
+
+    // Previously written, discard.
     //void (*primecheck)(void) = (void (*)(void))(process_table[2].entryPoint);
     //primecheck();
-    current_process = &process_table[0];
     //asm volatile("svc #0");
-    restore_context(process_table[0].context);
 }
 

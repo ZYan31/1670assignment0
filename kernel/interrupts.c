@@ -5,7 +5,9 @@
 #include "printf.h"
 #include "utils.h"
 #include "drivers/timer.h"
+#include "drivers/uart.h"
 #include "proc.h"
+#include "console.h"   // TEMP (Quest 1-C test): drain input_buf from the timer
 
 int64 timer;
 
@@ -38,8 +40,6 @@ void handle_interrupt(context_t* ctx){
                        (int)process_table[i].cpu_ticks,
                        (int)(process_table[i].cpu_ticks * 100 / timer));
     }
-
-    //actual
     uint64 source = mmio_read32(CORE0_INTERRUPT_SOURCE);
     if (source & (0b1 << 1)){
         // This tick belonged to the process that was running.
@@ -51,6 +51,10 @@ void handle_interrupt(context_t* ctx){
         current_process->context = ctx;
         current_process->state = RUNNABLE;
         timer_interrupt();            // re-arm -> scheduler -> pick_next -> resume (no return)
+    } else if (source & (0b1 << 8)) { // Gets from the GPU that peripheral IRQ is pending. 
+        if (mmio_read32(IRQ_PENDING_2) & (0b1 << 25)) { // uart specifically. shift 25.
+            uart_interrupt();
+        }
     } else {
         panic("unexpected interrupt source: %p", (void*)(uint64)source);
     }
@@ -61,6 +65,7 @@ void enable_interrupt_controller(void) {
     // Enable the ARM generic timer for core 0 by setting bit 1 of
     // the CORE0_TIMER_IRQ_CTRL register.
     mmio_write32(CORE0_TIMER_IRQ_CTRL, (0b1 << 1));
+    mmio_write32(ENABLE_IRQS_2, (0b1 << 25));
 };
 
 void enable_interrupts(void){
