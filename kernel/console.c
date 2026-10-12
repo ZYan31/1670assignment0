@@ -9,6 +9,7 @@ void console_init(){
 }
 
 void deliver(char c){
+    if (foreground_pid == 0) return;
     ringbuf_t* b = &process_table[foreground_pid].input_buf;
     rb_push(b, c);
     wakeup(b);

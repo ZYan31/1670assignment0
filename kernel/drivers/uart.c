@@ -52,5 +52,5 @@ void uart_interrupt(){
     console_handle_input(retval);
     //printf("console: got '%c' \r\n", retval);
   }
-  mmio_write32(UART_ICR, RXI);
+  mmio_write32(UART_ICR, RXI | RTI);   // ack BOTH, or an uncleared RTI storms the IRQ
 }
