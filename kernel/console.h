@@ -4,8 +4,10 @@
 #include "ringbuf.h"
 #include "types.h"
 
-extern ringbuf_t input_buf;             // defined in console.c
+extern int32 foreground_pid;
 void console_init(void);
 void console_handle_input(char c);
+char console_getc(void);
+int32 console_hasc(void);
 
 #endif  // _CONSOLE_H

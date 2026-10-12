@@ -23,7 +23,7 @@ typedef struct context {
 _Static_assert(sizeof(context_t) == S_FRAME_SIZE,
                "context_t must be S_FRAME_SIZE");
 
-[[noreturn]] void yield_entry();
+void yield_entry();   // returns via the context-switch eret when rescheduled
 [[noreturn]] void restore_context(context_t* c);
 
 #endif  // _CONTEXT_H

@@ -6,6 +6,8 @@
 
 void printf(const char* fmt, ...);
 void yield();
+char getc();
+int hasc();
 void exit();
 
 #endif  // __LIB_U_COMMON_H

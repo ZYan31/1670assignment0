@@ -7,7 +7,6 @@
 #include "drivers/timer.h"
 #include "drivers/uart.h"
 #include "proc.h"
-#include "console.h"   // TEMP (Quest 1-C test): drain input_buf from the timer
 
 int64 timer;
 
@@ -32,14 +31,14 @@ void handle_interrupt(context_t* ctx){
     //tracker
     timer +=1;
     //if(timer %100 ==0 ) printf("100 ticks have passed: %d", timer);
-    if (timer == 1000) {   // ~10 s at a 10 ms quantum: dump the CPU split once
-        printf("\r\n=== CPU over %d ticks ===\r\n", (int)timer);
-        for (uint32 i = 0; i < NPROC; i++)
-            if (process_table[i].state != UNUSED)
-                printf("%s: %d ticks (%d%%)\r\n", process_table[i].procName,
-                       (int)process_table[i].cpu_ticks,
-                       (int)(process_table[i].cpu_ticks * 100 / timer));
-    }
+    // if (timer == 1000) {   // ~10 s at a 10 ms quantum: dump the CPU split once
+    //     printf("\r\n=== CPU over %d ticks ===\r\n", (int)timer);
+    //     for (uint32 i = 0; i < NPROC; i++)
+    //         if (process_table[i].state != UNUSED)
+    //             printf("%s: %d ticks (%d%%)\r\n", process_table[i].procName,
+    //                    (int)process_table[i].cpu_ticks,
+    //                    (int)(process_table[i].cpu_ticks * 100 / timer));
+    // }
     uint64 source = mmio_read32(CORE0_INTERRUPT_SOURCE);
     if (source & (0b1 << 1)){
         // This tick belonged to the process that was running.

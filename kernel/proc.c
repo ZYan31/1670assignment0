@@ -19,6 +19,8 @@ struct proc *allocproc(){
             // Earlier-loaded procs (interactive hello/counter) rank above the
             // later CPU hog (primecheck); none starts at 0, so aging can lift it.
             p -> priority = (i+1) * PRIORITY_SCALE;
+            rb_init(&p->input_buf);
+            p->usesBuf = false;
             break;
         }
     }

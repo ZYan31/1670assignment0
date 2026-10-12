@@ -8,5 +8,7 @@ struct proc* pick_next(void);
 void resume(struct proc* p);
 void scheduler(void);
 void handle_yield(context_t* ctx);
+void block(void* chan);
+void wakeup(void* chan);
 
 #endif  // _SCHEDULING_H

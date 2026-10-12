@@ -17,6 +17,14 @@ void yield(){
   (*(void (**)(void))F_YIELD)();
 }
 
+char getc(){
+  return (*(char (**)(void))F_GETC)();
+}
+
+int hasc(){
+  return (*(int (**)(void))F_HASC)();
+}
+
 void exit() {
   return;
 }

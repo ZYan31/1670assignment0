@@ -18,27 +18,35 @@
 
 typedef void (*vprintf_fn)(const char*, va_list);
 //making a printf_fn that is the right space/size for the pointer.
+extern char _binary_user_idle_elf_start[];
+extern char _binary_user_basic_elf_start[];  
 extern char _binary_user_hello_elf_start[];    // Linker-generated, already exists in `init.c`
 extern char _binary_user_counter_elf_start[];         // same
 extern char _binary_user_primecheck_elf_start[]; // same
+extern char _binary_user_keytest_elf_start[];    // Quest 2: echoes keystrokes via getc()
 // extern char _binary_user_pi_elf_start[];
 // extern char _binary_user_squares_elf_start[];
 
 // All executables available
 char* executables[] = {
-    _binary_user_hello_elf_start,
-    _binary_user_counter_elf_start,
-    _binary_user_primecheck_elf_start,
+    _binary_user_idle_elf_start,
+    _binary_user_keytest_elf_start,
+    _binary_user_basic_elf_start,
+    // _binary_user_hello_elf_start,
+    // _binary_user_counter_elf_start,
+    // _binary_user_primecheck_elf_start,
     nullptr
 };
 
 // Names of the programs for debug output
-char* executable_names[] = {"hello", "counter", "primecheck", nullptr};
+char* executable_names[] = {"idle", "keytest", "basic", /*"hello", "counter", "primecheck"*/ nullptr};
 
 void klib_init() {
     *(void(**) (const char*, va_list))F_VPRINTF = vprintf;
    //*(void(**) (void))F_YIELD = vyield;
    *(void (**)(void))F_YIELD = yield_entry;
+   *(char (**)(void))F_GETC = console_getc;
+   *(int32 (**)(void))F_HASC = console_hasc;
 }
 
 void kernel_main(void) {

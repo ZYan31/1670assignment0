@@ -39,6 +39,8 @@
 #define F_BASE 0x01000000
 #define F_VPRINTF (F_BASE - sizeof(void*))
 #define F_YIELD (F_BASE - 2*sizeof(void*))
+#define F_GETC (F_BASE - 3*sizeof(void*))
+#define F_HASC (F_BASE - 4*sizeof(void*))
 #define PROC_START 0x100000
 
 #endif  // _MEMLAYOUT_H

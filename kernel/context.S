@@ -1,5 +1,3 @@
-// TEMPORARY STUB so the kernel builds for Quest 1C testing.
-// Real implementation is saved in context.S.wip -- restore it for Quest 2.
 // in the yield_entry, #fp is x29, lr is x30
 
 #include "constant.h"

@@ -6,10 +6,11 @@
 #include "printf.h"
 #include "limits.h"
 #include "memlayout.h"
+#include "ringbuf.h"
 #define AGING_RATE 1
 #define PRIORITY_SCALE 10
 
-enum procstate {UNUSED, USED, RUNNABLE, RUNNING };
+enum procstate {UNUSED, USED, RUNNABLE, RUNNING, BLOCKED};
 struct proc {
     enum procstate state;
     uint32 processID;
@@ -20,6 +21,9 @@ struct proc {
     void* entryPoint;
     void* stack;
     context_t* context;
+    void* blocked_on;
+    ringbuf_t input_buf;
+    bool usesBuf;
 };
 
 extern struct proc  process_table[NPROC];

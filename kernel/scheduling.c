@@ -17,15 +17,17 @@ struct proc* pick_next(){
 #else
     int64 best = -1;          // signed so "nothing found" is detectable
     int   next = -1;
-    for (uint32 i = 0; i < NPROC; i++){
+    for (uint32 i = 1; i < NPROC; i++){
         struct proc* p = &process_table[i];           // pointer, not a copy
         if (p->state == RUNNABLE && (int64)(p->priority + p->age) > best){
             best = (int64)(p->priority + p->age);
             next = i;
         }
     }
-    if (next < 0) panic("pick_next: no runnable process");
+    if (next < 0) next = 0;
     return &process_table[next];
+    //panic("pick_next: no runnable process"); //
+    
 #endif
 
     // for(int i = 1; i <= NPROC; i++){
@@ -57,9 +59,25 @@ void scheduler(){
     resume(pick_next());
 }
 
+void block(void* chan){
+    current_process-> blocked_on = chan;
+    current_process-> state = BLOCKED;
+    yield_entry();
+}
+
+void wakeup(void* chan){
+    for (int i = 0 ; i < NPROC; i++){
+        if(process_table[i].state == BLOCKED && process_table[i].blocked_on == chan){
+            process_table[i].state = RUNNABLE;
+        }
+    }
+}
+
 void handle_yield(context_t* ctx){
     current_process->context = ctx;
-    current_process->state = RUNNABLE;
+    if (current_process->state == RUNNING){
+        current_process->state = RUNNABLE;
+    }
     scheduler();
 }
 
