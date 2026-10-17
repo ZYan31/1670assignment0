@@ -37,7 +37,7 @@ void* memcpy(void* dest, const void* src, uint64 n) {
 }
 
 void* memset(void* src, int c, uint64 n) {
-  int* s = src;
+  char* s = src;
 
   for (uint64 i = 0; i < n; ++i) {
     s[i] = c;

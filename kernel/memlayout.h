@@ -43,4 +43,25 @@
 #define F_HASC (F_BASE - 4*sizeof(void*))
 #define PROC_START 0x100000
 
+// Project 3 adds several more of these: a way for a process to read a
+// character, to find its canvas, and so on. Add them here as you
+// go, following the same pattern (successive pointer-sized slots at
+// *decreasing* addresses from F_BASE). Anything you name `F_...` is copied
+// into user/u_klib.h automatically by user/gen_klib_header.py, so user
+// programs can see it without you editing a generated file.
+//
+// #define F_GETC (F_BASE - 3 * sizeof(void*))
+// ...
+
+// Location of the framebuffer info struct (`struct fb_info`, which you will
+// define in kernel/drivers/fb.h). Your kernel fills this in at boot and user
+// programs read it to find out where the pixels are and how they are laid
+// out -- the same fixed-address trick as F_BASE above, but carrying a struct
+// rather than a function pointer.
+//
+// NOTE: this one is *not* named `F_...`, so it is not copied into
+// user/u_klib.h for you. User programs need their own matching definition;
+// see user/lib/u_fb.h.
+// #define FB_INFO_BASE YOUR_CHOSEN_VALUE
+
 #endif  // _MEMLAYOUT_H
