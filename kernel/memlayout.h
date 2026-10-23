@@ -11,7 +11,7 @@
 
 // Location of the initial kernel stack in physical memory.
 // Must be 16-byte aligned.
-#define INITIAL_KERNEL_STACK 0x400000
+#define INITIAL_KERNEL_STACK 0x02000000
 
 // Peripherals are mapped starting at 0x3F00'0000, giving 1 MB for I/O memory
 // Note that the documentation lists addresses starting at 0x7E00'0000. This is
@@ -35,14 +35,18 @@
 // actual machine code. User programs can then call kernel functions by simply
 // following those pointers (even though they weren't compiled together with
 // the kernel).
-// TODO: you'll need to change F_BASE in Quest 3 of Project 1.
-#define F_BASE 0x01000000
+#define F_BASE 0x03000000
 #define F_VPRINTF (F_BASE - sizeof(void*))
 #define F_YIELD (F_BASE - 2*sizeof(void*))
 #define F_GETC (F_BASE - 3*sizeof(void*))
 #define F_HASC (F_BASE - 4*sizeof(void*))
-#define PROC_START 0x100000
-
+#define F_UPTIME (F_BASE - 5*sizeof(void*))   // Quest 3D: ms since boot (for `uptime`)
+#define F_PS (F_BASE - 6*sizeof(void*))        // Quest 3D: read one process-table slot (for `ps`)
+#define F_GET_CANVAS (F_BASE - 7*sizeof(void*))  //Quest 4A
+#define F_VSYNC (F_BASE - 8*sizeof(void*))
+#define PROC_START 0x00100000
+#define FB_INFO_BASE 0x10000000
+//note I MADE GETC() THE ADDRESS FOR WAIT_FOR_VSYNC() LMAO
 // Project 3 adds several more of these: a way for a process to read a
 // character, to find its canvas, and so on. Add them here as you
 // go, following the same pattern (successive pointer-sized slots at

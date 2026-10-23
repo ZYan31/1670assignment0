@@ -10,5 +10,6 @@ void scheduler(void);
 void handle_yield(context_t* ctx);
 void block(void* chan);
 void wakeup(void* chan);
+void wait_for_vsync(void);
 
 #endif  // _SCHEDULING_H

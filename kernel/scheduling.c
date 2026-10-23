@@ -81,4 +81,8 @@ void handle_yield(context_t* ctx){
     scheduler();
 }
 
-
+void wait_for_vsync(){
+    current_process->uses_vsync = true;   // from now on, hold this window mid-frame
+    if (!fb_get()->pixels) return;        // no display: nothing will ever wake us
+    block(fb_get());   // same channel the compositor wakes after each flip
+}

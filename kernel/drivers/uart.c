@@ -35,6 +35,10 @@ void uart_init() {
 }
 
 void uart_send(char c){
+	if (c == '\n'){   // raw serial: LF moves down only, so prepend CR to return to col 0
+		while(mmio_read32(UART_FR) & (0b1<<5)){}
+		mmio_write32(UART_DR, '\r');
+	}
 	while(mmio_read32(UART_FR) & (0b1<<5)){}
 	mmio_write32(UART_DR, c);
 }

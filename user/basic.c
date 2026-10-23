@@ -21,6 +21,12 @@
 // is waiting. Nothing else in the file touches your kernel.
 
 #include "u_common.h"
+#include "u_fb.h"
+#include "u_vterm.h"
+
+// BASIC's own text console, set up on the canvas the kernel gives this process.
+static term_t basic_term;
+static bool   basic_has_canvas = false;
 
 // ---------------------------------------------------------------------------
 // WIRING: the four places this program talks to your OS.
@@ -38,7 +44,14 @@
 
 // Called once, before anything else.
 static void basic_start(void) {
-  printf("\r\nTinyBASIC. Type a program, then RUN. Ctrl-C stops it.\r\n");
+  struct canvas* c = get_canvas();
+  if (c) {
+    basic_has_canvas = true;
+    term_init(&basic_term, c);
+    term_printf(&basic_term, "TinyBASIC. Type a program, then RUN.\n");
+  } else {
+    printf("\r\nTinyBASIC. Type a program, then RUN. Ctrl-C stops it.\r\n");
+  }
 }
 
 // Write one character.
@@ -46,7 +59,9 @@ static void basic_start(void) {
 // BASIC ends its lines with a bare '\n'. A serial terminal needs "\r\n" to
 // get back to the left margin as well as down a line, so we add the '\r'.
 static void basic_putc(char c) {
-  if (c == '\n') {
+  if (basic_has_canvas) {
+    term_putc(&basic_term, c);   // the console handles '\n' (newline + scroll) itself
+  } else if (c == '\n') {
     printf("\r\n");
   } else {
     printf("%c", c);
