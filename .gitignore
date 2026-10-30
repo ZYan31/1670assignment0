@@ -13,3 +13,6 @@ compile_commands.json
 *.bin
 
 procs.gdb
+
+# Records the build flags (see BUILDSTAMP in the Makefile)
+.buildflags

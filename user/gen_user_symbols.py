@@ -23,13 +23,13 @@ import struct
 import subprocess
 import sys
 
-# Defaults, overridden by parsing kernel/limits.h if available.
+# Defaults, overridden by parsing kernel/limits.h and kernel/memlayout.h.
 PROC_START = 0xA0000
 PROC_SIZE = 0x10000
 
 
 def parse_limits(limits_path):
-    """Read PROC_START and PROC_SIZE from kernel/limits.h."""
+    """Read PROC_START and PROC_SIZE from a kernel header, if it defines them."""
     global PROC_START, PROC_SIZE
     try:
         with open(limits_path) as f:
@@ -181,10 +181,11 @@ def find_user_elf(user_elf_dir, mangled_name):
 
 def generate_gdb_commands(kernel_elf, user_elf_dir):
     """Generate GDB add-symbol-file commands for all user ELFs."""
-    # Try to read PROC_START/PROC_SIZE from limits.h relative to kernel ELF
+    # Try to read PROC_START/PROC_SIZE from limits.h or memlayout.h (whichever
+    # defines them) relative to kernel ELF
     kernel_dir = os.path.dirname(kernel_elf)
-    limits_path = os.path.join(kernel_dir, "limits.h")
-    parse_limits(limits_path)
+    for header in ("limits.h", "memlayout.h"):
+        parse_limits(os.path.join(kernel_dir, header))
 
     blob_syms, exec_addr, exec_size = get_nm_symbols(kernel_elf)
 

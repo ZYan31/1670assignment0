@@ -124,4 +124,19 @@
 // SPSR_EL3: eret target state = EL2h, interrupts masked
 #define SPSR_VALUE_EL3 (SPSR_MASK_ALL | SPSR_EL2h)
 
+// ---------------------------------------------------------------------------
+// Counter-timer Kernel Control Register (CNTKCTL_EL1)
+// ---------------------------------------------------------------------------
+// Decides what code at EL0 may do with the ARM generic timer. Bit 0
+// (EL0PCTEN) lets EL0 *read* the counter (CNTPCT_EL0) and its frequency
+// (CNTFRQ_EL0). Bit 9 (EL0PTEN) would also let EL0 *program* the timer
+// (CNTP_CTL_EL0, CNTP_CVAL_EL0, ...).
+//
+// We allow the first but not the second: a process may tell the time, but
+// must not be able to stop or reprogram the timer that preempts it. (Linux
+// does the same, for the virtual counter, CNTVCT_EL0.) The architecture
+// leaves this register's reset value UNKNOWN, so your kernel must write it.
+#define CNTKCTL_EL0PCTEN (0b1 << 0)  // EL0 may read CNTPCT_EL0, CNTFRQ_EL0
+#define CNTKCTL_VALUE (CNTKCTL_EL0PCTEN)
+
 #endif  // _AARCH64_H

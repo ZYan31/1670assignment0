@@ -27,6 +27,13 @@
 // peripherals, and are documented separately from them -- see Appendix B.
 #define ARM_LOCAL_PERIPHERALS_BASE 0x40000000
 
+// Project 4 adds one new region: a kernel stack for every process (Quest 1,
+// Part B). Pick a place for NPROC of them that collides with nothing else,
+// define it here (or in limits.h), and add it to your memory layout diagram:
+//
+// #define KSTACK_SIZE YOUR_CHOSEN_VALUE   // 16 KiB is plenty
+// #define KSTACKS_BASE YOUR_CHOSEN_VALUE  // keep every stack top 16-byte aligned
+
 // Trampoline to user-reachable functions (like yield or printf).
 // This is essentially an array of function pointers at a known location, so
 // that programs can use these functions as a library.
