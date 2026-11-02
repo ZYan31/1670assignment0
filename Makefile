@@ -79,6 +79,11 @@ USRCS  := $(wildcard $(U)/*.c)
 UELFS  := $(USRCS:.c=.elf)
 UOBJS  := $(patsubst $(U)/%.elf,$(K)/%_kproc.o,$(UELFS))
 
+# Programs we provide as pre-compiled executables (user/prebuilt/*.elf) get
+# embedded into the kernel image just like the ones you compile yourself.
+UPREBUILT := $(wildcard $(U)/prebuilt/*.elf)
+UOBJS     += $(patsubst $(U)/prebuilt/%.elf,$(K)/%_kproc.o,$(UPREBUILT))
+
 ULIBSRCS := $(wildcard $(ULIB)/*.c)
 ULIBOBJS := $(ULIBSRCS:.c=.o)
 UHDRS    := $(wildcard $(U)/*.h) $(wildcard $(ULIB)/*.h)
@@ -90,8 +95,14 @@ UDIABSRCS := $(wildcard $(U)/diabolical/*.c)
 UDIABHDRS := $(wildcard $(U)/diabolical/*.h)
 UOBJS     += $(patsubst $(U)/diabolical/%.c,$(K)/%_kproc.o,$(UDIABSRCS))
 
+# The names of all the programs above (e.g., user/name.c -> name)
+# Used by gen_user_prog_info.py
+UPROGS := $(patsubst $(K)/%_kproc.o,%,$(UOBJS))
+
 # Find all the source files for kernel code
 KSRCS  := $(wildcard $(K)/*.c $(K)/drivers/*.c)
+KSRCS  := $(sort $(KSRCS) $(K)/userprogs.c)
+
 KASM   := $(wildcard $(K)/*.S)
 KOBJS  := $(KASM:%.S=%.o) $(KSRCS:%.c=%.o)
 
@@ -115,6 +126,7 @@ clean:
 	rm -rf $(OBJDIR)
 	rm -f procs.gdb
 	rm -f $(BUILDSTAMP)
+	rm -f $(K)/userprogs.h $(K)/userprogs.c
 
 format:
 	find . -name *.[c,h] | xargs clang-format -i
@@ -141,11 +153,19 @@ endif
 
 $(K)/%.o: $(K)/%.c $(BUILDSTAMP)
 	mkdir -p $(@D) $(DEPSDIR)/$(K)/$(*D)
-	$(GCC) $(CFLAGS) -MMD -MF $(DEPSDIR)/$(K)/$*.d -Ikernel -c $< -o $@
+	$(GCC) $(CFLAGS) -MMD -MP -MF $(DEPSDIR)/$(K)/$*.d -Ikernel -c $< -o $@
 
 $(K)/%.o: $(K)/%.S $(BUILDSTAMP)
 	mkdir -p $(DEPSDIR)/$(K)/$(*D)
-	$(GCC) $(ASMFLAGS) -MMD -MF $(DEPSDIR)/$(K)/$*.d -c $< -o $@
+	$(GCC) $(ASMFLAGS) -MMD -MP -MF $(DEPSDIR)/$(K)/$*.d -c $< -o $@
+
+# Generate the table of user programs (kernel/userprogs.c, kernel/userprogs.h)
+$(K)/userprogs.h: FORCE
+	@$(PYTHON) $(U)/gen_user_prog_info.py --header $(K)/userprogs.h --source $(K)/userprogs.c $(UPROGS)
+$(K)/userprogs.c: $(K)/userprogs.h ;
+
+# Make sure userprogs.h exists before compiling any kernel objects
+$(KOBJS): | $(K)/userprogs.h
 
 kernel8.img: $(KOBJS) $(UOBJS)
 	$(LD) -T kernel/linker.ld -o $(K)/kernel8.elf $(KOBJS) $(UOBJS)
@@ -186,7 +206,7 @@ $(U)/syscalls.o: $(U)/syscalls.S $(BUILDSTAMP)
 # Compile user library files into .o files
 $(ULIB)/%.o: $(ULIB)/%.c $(UHDRS) $(U)/u_klib.h $(BUILDSTAMP)
 	mkdir -p $(DEPSDIR)/$(ULIB)
-	$(GCC) $(CFLAGS) -I$(U) -I$(ULIB) -MMD -MF $(DEPSDIR)/$(ULIB)/$*.d -c $< -o $@
+	$(GCC) $(CFLAGS) -I$(U) -I$(ULIB) -MMD -MP -MF $(DEPSDIR)/$(ULIB)/$*.d -c $< -o $@
 
 # Compile user programs into .elf files (ELF executables)
 # -e _start: set entry point to '_start' (in user/lib/u_start.c), which calls
@@ -209,13 +229,20 @@ $(U)/%.elf: $(U)/diabolical/%.c $(UDIABHDRS) $(ULIBOBJS) $(U)/syscalls.o $(U)/u_
 	$(GCC) $(CFLAGS) -e _start -I$(U) -I$(ULIB) -static-pie $(TOOL_LDFLAGS) -Wl,-nmagic,-T,$(U)/procs.ld -o $@ $(filter-out %.h $(BUILDSTAMP),$^)
 	@cp $@ $(OBJDIR)/$(notdir $@) # Save a copy for GDB
 
+# Pre-compiled programs (e.g., user/prebuilt/snake.elf) need no compiling: we
+# just copy them next to the others. This rule only applies when there is no
+# user/<name>.c for the program.
+$(U)/%.elf: $(U)/prebuilt/%.elf | $(OBJDIR)
+	cp $< $@
+	@cp $< $(OBJDIR)/$(notdir $@) # Save a copy for GDB
+
 # Turn ELF executable into an object file, so that we can link it into the kernel executable.
 $(K)/%_kproc.o: $(U)/%.elf
 	$(STRIP) --strip-unneeded $<
 	$(OBJCOPY) -I binary $< -O elf64-littleaarch64 -B aarch64 $@ --rename-section .data=.elf_executables,alloc,load,readonly,data,contents
 
-procs.gdb: kernel8.img
-	$(PYTHON) $(U)/gen_user_symbols.py -t $(TOOLPREFIX) -o $@ kernel/kernel8.elf $(OBJDIR)
+procs.gdb: kernel8.img $(U)/gen_user_symbols.py
+	$(PYTHON) $(U)/gen_user_symbols.py -t $(TOOLPREFIX) -o $@ kernel/kernel8.elf $(OBJDIR) $(UPROGS)
 
 $(OBJDIR):
 	mkdir -p $@

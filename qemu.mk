@@ -13,10 +13,15 @@ VNCPORT ?= 5700
 WSCPORT ?= 5838
 CONSOLE ?= serial
 WSADDR  ?= auto
+V       ?= 1
 
 QEMU_OPTS_VERBOSE = -d int
-QEMU_OPTS_GDB = -S -gdb tcp::$(GDBPORT) $(QEMU_OPTS_VERBOSE)
 
+ifeq ($(V),0)
+  QEMU_OPTS_VERBOSE :=
+endif
+
+QEMU_OPTS_GDB := -S -gdb tcp::$(GDBPORT) $(QEMU_OPTS_VERBOSE)
 QEMU_CONSOLE_STDIO = -serial mon:stdio
 QEMU_CONSOLE_WS    = -serial websocket:$(WSADDR):$(WSCPORT),server=on,wait=on
 QEMU_OPTS_SERIAL  := $(QEMU_CONSOLE_STDIO)

@@ -1,2 +1,7 @@
 u_klib.h
 syscalls.S
+*.img
+*.o
+*.elf
+!prebuilt/*.elf
+*.d
