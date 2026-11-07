@@ -4,12 +4,12 @@
 #include "u_klib.h"
 #include "u_types.h"
 #include "u_fb.h"
+#include "u_syscalls.h"
 
 void printf(const char* fmt, ...);
-void yield();
+//void yield();
 char getc();
 int hasc();
-void exit();
 struct canvas* get_canvas();
 void wait_for_vsync();   // block until the compositor puts the next frame up (F_VSYNC)
 

@@ -20,5 +20,5 @@ int main(void) {
     p = s;  // Update previous square value
   }
 
-  exit();
+  exit(0);
 }

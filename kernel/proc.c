@@ -17,6 +17,7 @@ struct proc *allocproc(){
             // Each process owns a fixed 1MiB slice of RAM keyed by its PID.
             // sp stack pointer starts at the top of that slice.
             p -> stack = (void*)((uint64)PROC_START + (uint64)(i + 1) * PROC_SIZE);
+            p -> kernel_stack = (void*)((uint64)KSTACKS_BASE+ (uint64)(i + 1) * KSTACK_SIZE);
             // Earlier-loaded procs rank above the later ones
             p -> priority = (i+1) * PRIORITY_SCALE;
             rb_init(&p->input_buf);

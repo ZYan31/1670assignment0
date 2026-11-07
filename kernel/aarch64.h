@@ -84,6 +84,7 @@
 #define SPSR_MASK_SERROR (0b1 << 8)  // System Error (SError) exceptions
 #define SPSR_MASK_ALL (0b111 << 6)   // Mask all of the above.
 
+#define SPSR_USER (SPSR_EL0t | SPSR_MASK_FIQ | SPSR_MASK_SERROR)
 // The PSTATE to set up before the `eret` in your bootup code that leaves EL2:
 // resume at EL1 on the kernel stack, with every interrupt masked. Masking
 // matters, because at this point in bootup you have not installed an exception

@@ -4,18 +4,18 @@
 #include "u_types.h"
 
 void printf(const char* fmt, ...) {
-  va_list args;
+  (void)fmt;
+  /*va_list args;
   va_start(args, fmt);
 
   // calls the function which address is contained in F_VPRINTF
   (*(void (**)(const char*, va_list))F_VPRINTF)(fmt, args);
-
-  va_end(args);
+  va_end(args);*/
 };
 
-void yield(){
-  (*(void (**)(void))F_YIELD)();
-}
+// void yield(){
+//   (*(void (**)(void))F_YIELD)();
+// }
 
 char getc(){
   return (*(char (**)(void))F_GETC)();
@@ -33,8 +33,9 @@ void wait_for_vsync(){
   (*(void (**)(void))F_VSYNC)();
 }
 
-void exit() {
-  return;
+void exit(int status) {
+  (void)status;
+  for (;;) { yield(); }
 }
 
 // Follow the F_UPTIME pointer the kernel installed and call through it.

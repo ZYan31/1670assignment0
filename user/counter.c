@@ -19,5 +19,5 @@ int main(void) {
     yield();
   }
 
-  exit();
+  exit(0);
 }

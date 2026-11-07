@@ -14,5 +14,5 @@ int main(void) {
     printf("got '%c'\r\n", c);
   }
 
-  exit();
+  exit(0);
 }

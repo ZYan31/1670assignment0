@@ -22,5 +22,5 @@ int main(void) {
     printf("Process hello: after yield\r\n");
   }
 
-  exit();
+  exit(0);
 }

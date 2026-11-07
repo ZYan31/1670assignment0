@@ -37,6 +37,7 @@ struct proc {
     struct canvas* proc_canvas;
     struct rect window;
     void* canvas_pixels;
+    void* kernel_stack;
 };
 
 extern struct proc  process_table[NPROC];

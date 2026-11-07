@@ -269,10 +269,11 @@ void load_elf_into_proc(struct elf_header* ehdr, struct proc* proc){
   void* pa_start = (void*)((uint64)PROC_START + (uint64)proc->processID * PROC_SIZE);
   void* entrypoint = load_elf(ehdr, pa_start);
   proc->entryPoint = entrypoint;
-  context_t* context = (context_t*)((uint64)pa_start + (uint64)PROC_SIZE - (uint64)sizeof(context_t));
+  context_t* context = (context_t*)((uint64)proc->kernel_stack - (uint64)sizeof(context_t));
   memset(context, 0, sizeof(context_t));
   context->elr_el1 = (uint64)entrypoint;
-  context->spsr_el1 = SPSR_PROC;
+  context->sp_el0 = (uint64)proc->stack;
+  context->spsr_el1 = SPSR_USER;
   proc->context = context;
 }
 

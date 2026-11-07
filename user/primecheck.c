@@ -24,5 +24,5 @@ int main() {
       }
     }
   }
-  exit();
+  exit(0);
 }

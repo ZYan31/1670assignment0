@@ -51,10 +51,10 @@ void uart_send_string(const char* s){
 }
 
 void uart_interrupt(){
+  mmio_write32(UART_ICR, RXI | RTI);   // ack BOTH, or an uncleared RTI storms the IRQ
   while(! (mmio_read32(UART_FR) & (0b1 << 4))){ // ensure not empty
     char retval = mmio_read32(UART_DR);
     console_handle_input(retval);
     //printf("console: got '%c' \r\n", retval);
   }
-  mmio_write32(UART_ICR, RXI | RTI);   // ack BOTH, or an uncleared RTI storms the IRQ
 }

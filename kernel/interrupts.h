@@ -7,12 +7,23 @@
 
 #include "memlayout.h"
 #include "context.h"
+#include "interrupts.h"
+#include "printf.h"
+#include "utils.h"
+#include "drivers/timer.h"
+#include "drivers/uart.h"
+#include "proc.h"
+#include "scheduling.h"
+#include "console.h"
+#include "aarch64.h"
+#include "syscall.h"
 // Add any necessary definitions here.
 
 // Declare public functions like `handle_interrupt` and `enable_interrupts`
 // here!
 
 void handle_sync_exception(context_t* ctx);
+void handle_el0_sync(context_t* ctx);
 void handle_interrupt(context_t* ctx);
 void enable_interrupts(void);
 void enable_interrupt_controller(void);

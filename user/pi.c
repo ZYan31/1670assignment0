@@ -226,5 +226,5 @@ int main(void) {
   print_pi();
 #endif
 
-  exit();
+  exit(0);
 }

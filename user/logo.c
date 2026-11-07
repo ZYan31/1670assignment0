@@ -110,5 +110,5 @@ int main(void) {
   for (;;) {
     yield();
   }
-  exit();
+  exit(0);
 }

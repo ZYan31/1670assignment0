@@ -25,6 +25,14 @@ sync_handler:
     bl handle_sync_exception
     b .
 
+el0_sync_handler:
+    sub sp, sp, #S_FRAME_SIZE
+    stp x29, x30, [sp]
+    bl save_context
+    mov x0, sp
+    bl handle_el0_sync
+    b .
+
 .balign 0x800                       // 3. Align the table to a 2 KiB boundary, as hardware requires
 exception_vector_table:             // 4. Table that defines the table and its memory location
 // Current EL, using SP_EL0 (unused in our OS)
@@ -47,9 +55,9 @@ exception_vector_table:             // 4. Table that defines the table and its m
     b .                             // 0x380: SError
 // Lower EL, in AArch64
     .balign 0x80
-    b .                             // 0x400: Synchronous Exceptions
+    b el0_sync_handler              // 0x400: Synchronous Exceptions
     .balign 0x80
-    b .                             // 0x480: IRQ
+    b irq_handler                   // 0x480: IRQ
     .balign 0x80
     b .                             // 0x500: FIQ
     .balign 0x80
