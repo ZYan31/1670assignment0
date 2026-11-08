@@ -9,7 +9,7 @@ int main() {
 
   // Point sp at an address with no memory behind it (and not even 16-byte
   // aligned), then spin forever in a one-instruction loop that never touches
-  // memory. The program do nothing harmful itself -- but the next timer
+  // memory. The program does nothing harmful itself -- but the next timer
   // interrupt makes the kernel save its registers, and the question is: where?
   //
   // This has to be a single asm statement. The compiler does not know that
