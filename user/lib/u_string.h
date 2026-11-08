@@ -17,6 +17,10 @@ void sprintf(char* out, const char* fmt, ...);
 // Same as printf, but takes an already-started va_list.
 void vsprintf(char* out, const char* fmt, va_list args);
 
+// Bounded vsprintf: writes at most `size` bytes to `out` (NUL included) and
+// returns the number of bytes written (excluding the NUL). Safe for printf.
+int vsnprintf(char* out, uint64 size, const char* fmt, va_list args);
+
 // Compare two strings: 0 if equal (like the C library's strcmp).
 int strcmp(const char* a, const char* b);
 

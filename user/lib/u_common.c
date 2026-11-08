@@ -2,15 +2,15 @@
 
 #include "u_klib.h"
 #include "u_types.h"
+#include "u_string.h"
 
 void printf(const char* fmt, ...) {
-  (void)fmt;
-  /*va_list args;
+  char buf[256];
+  va_list args;
   va_start(args, fmt);
-
-  // calls the function which address is contained in F_VPRINTF
-  (*(void (**)(const char*, va_list))F_VPRINTF)(fmt, args);
-  va_end(args);*/
+  int len = vsnprintf(buf, sizeof(buf), fmt, args);
+  va_end(args);
+  if (len > 0) write(1, buf, (size_t)len);
 };
 
 // void yield(){
@@ -18,32 +18,22 @@ void printf(const char* fmt, ...) {
 // }
 
 char getc(){
-  return (*(char (**)(void))F_GETC)();
+  char c;
+  if (read(0, &c, 1) != 1) return 0;   // stdin (fd 0); blocks for one byte
+  return c;
 }
 
 int hasc(){
-  return (*(int (**)(void))F_HASC)();
+  return peek(0);                      // bytes available on stdin, no blocking
 }
 
-struct canvas* get_canvas(void){
-  return (*(struct canvas* (**)(void))F_GET_CANVAS)();
-}
-
-void wait_for_vsync(){
-  (*(void (**)(void))F_VSYNC)();
-}
+// Trampoline wrappers removed -- these are syscalls now:
+//   get_canvas()  -> init_canvas()   (svc #7)
+//   wait_for_vsync() -> svc #8
+//   uptime_ms()   -> ticks()         (svc #1)
+//   get_proc_info() -> process_info() (svc #6)
 
 void exit(int status) {
   (void)status;
   for (;;) { yield(); }
-}
-
-// Follow the F_UPTIME pointer the kernel installed and call through it.
-uint64 uptime_ms() {
-  return (*(uint64 (**)(void))F_UPTIME)();
-}
-
-// Same trick for F_PS: the kernel reads slot `index` and fills in *out.
-int get_proc_info(uint32 index, struct proc_info* out) {
-  return (*(int (**)(uint32, struct proc_info*))F_PS)(index, out);
 }

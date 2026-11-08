@@ -38,6 +38,13 @@ struct proc *allocproc(){
             (uint64)(i* PROC_SIZE)) + CANVAS_OFFSET + sizeof(struct canvas);
             p->usesScreen = false;
             p->uses_vsync = false;
+            p->fd_table[0] = &console;
+            console.ref_ct++;              // one more user of the console
+            p->fd_table[1] = &console;
+            console.ref_ct++;
+            for(int i = 2; i < MAX_NUM_FDS; i++){
+                p->fd_table[i] = nullptr;
+            }
             break;
         }
     }
@@ -47,6 +54,25 @@ struct proc *allocproc(){
     //preempt_enable();
     return p;
 };
+
+// Map a file-descriptor number to the file it refers to in the current
+// process, or nullptr if fd is out of range or not open. Used by every
+// file-related system call.
+struct file* fd_lookup(int fd){
+    if (fd < 0 || fd >= MAX_NUM_FDS) return nullptr;
+    return current_process->fd_table[fd];
+}
+
+// Release every open file descriptor held by p: drop one reference on each
+// open file and null the slot. Called when a process exits or is killed.
+void proc_close_fds(struct proc* p){
+    for (int i = 0; i < MAX_NUM_FDS; i++){
+        if (p->fd_table[i]){
+            p->fd_table[i]->ref_ct--;      // one fewer user of that file
+            p->fd_table[i] = nullptr;
+        }
+    }
+}
 
 static const char* procstate_name(enum procstate s){
     switch (s){
@@ -73,6 +99,7 @@ int get_proc_info(uint32 index, struct proc_info* out){
     if (p->state == UNUSED) return 0;
 
     out->pid = p->processID;
+    out->ppid = 0;              // no parent/child relationship in this kernel
 
     uint32 i = 0;
     for (; i < PROCNAME_MAXLEN - 1 && p->procName[i]; i++)

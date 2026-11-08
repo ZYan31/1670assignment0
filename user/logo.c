@@ -61,7 +61,7 @@ static uint32 cell_color(char c) {
 }
 
 int main(void) {
-  struct canvas* cv = get_canvas();   // this process's window, or NULL
+  struct canvas* cv = init_canvas();   // claim this process's window, or NULL
   if (!cv) {
     printf("logo: no canvas, nothing to draw\r\n");
     for (;;) yield();

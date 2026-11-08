@@ -42,6 +42,7 @@ void handle_el0_sync(context_t* ctx){
         if(0x20 <= ex_class && ex_class <= 0x25){
             printf("  FAR_EL1 = %p\r\n", (void*)far);
         }
+        proc_close_fds(p);   // release the dying process's file descriptors
         p->state = UNUSED;
         p->usesBuf = false;
         if(foreground_pid == (int32)p->processID){

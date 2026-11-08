@@ -83,17 +83,7 @@ struct clock_canvas {
 // kernel counts timer ticks (you added that in Quest 3 for `uptime`), so
 // expose a trampoline function that returns the time and call it here.
 static uint64 sys_time_ms(void) {
-  uint64 count, freq;
-  __asm__ volatile("mrs %0, CNTPCT_EL0" : "=r"(count));
-  __asm__ volatile("mrs %0, CNTFRQ_EL0" : "=r"(freq));
-  freq &= 0xFFFFFFFFu;  // the top 32 bits of CNTFRQ_EL0 are reserved
-  if (freq == 0) {
-    return 0;
-  }
-  // Scale before dividing, but not so much that a long uptime overflows:
-  // count / (freq / 1000) keeps us well inside 64 bits.
-  uint64 per_ms = freq / 1000u;
-  return (per_ms == 0) ? 0 : count / per_ms;
+  return ticks();   // ms since boot, straight from the kernel (svc #1)
 }
 
 // Where do we draw? Fill in *c and return 1, or return 0 if there is nowhere
@@ -103,7 +93,7 @@ static uint64 sys_time_ms(void) {
 // Quest 4: the canvas your kernel gave this process. Ask for it, and copy
 // its pixel address, width, height and row stride (in pixels) into *c.
 static int clock_get_canvas(struct clock_canvas* c) {
-  struct canvas* cv = get_canvas();   // this process's window, or NULL
+  struct canvas* cv = init_canvas();   // claim this process's window, or NULL
   if (cv == nullptr) {
     return 0;
   }
@@ -122,7 +112,7 @@ static int clock_get_canvas(struct clock_canvas* c) {
 // to copy it. Your drawing library sets that flag for programs that use it;
 // this program does its own drawing, so it has to say so itself.
 static void clock_frame_done(void) {
-  get_canvas()->changed = 1;   // we do our own drawing, so tell the compositor to copy us
+  init_canvas()->changed = 1;   // we do our own drawing, so tell the compositor to copy us
 }
 
 // Wait until it is worth drawing another frame.

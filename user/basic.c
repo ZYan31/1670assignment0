@@ -44,7 +44,7 @@ static bool   basic_has_canvas = false;
 
 // Called once, before anything else.
 static void basic_start(void) {
-  struct canvas* c = get_canvas();
+  struct canvas* c = init_canvas();
   if (c) {
     basic_has_canvas = true;
     term_init(&basic_term, c);

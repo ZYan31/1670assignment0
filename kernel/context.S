@@ -10,7 +10,7 @@
 yield_entry:
 	msr DAIFSET, #2
 	msr elr_el1, x30
-	mov x9, #SPSR_PROC
+	mov x9, #SPSR_KERNEL
 	msr spsr_el1, x9
 	sub sp, sp, #S_FRAME_SIZE
 	stp x29, x30, [sp, #0]

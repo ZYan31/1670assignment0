@@ -38,40 +38,37 @@ extern char _binary_user_diab_stack_elf_start[];
 extern char _binary_user_diab_timer_elf_start[];
 extern char _binary_user_diab_vectors_elf_start[];
 int64 (*syscall_table[64])(context_t* ctx);
-// extern char _binary_user_pi_elf_start[];
+extern char _binary_user_pi_elf_start[];
+extern char _binary_user_badptr_elf_start[];
 // extern char _binary_user_squares_elf_start[];
 
 // All executables available
 char* executables[] = {
     _binary_user_idle_elf_start,
-    _binary_user_hello_elf_start,
-    _binary_user_counter_elf_start,
-    _binary_user_primecheck_elf_start,
+    _binary_user_term_elf_start,
+    _binary_user_basic_elf_start,
+    _binary_user_clock_elf_start,
+    _binary_user_pong_elf_start,
     nullptr
 };
 
 // Names of the programs for debug output
-char* executable_names[] = {"idle", "hello", "counter", "primecheck", nullptr};
+char* executable_names[] = {"idle", "term", "basic", "clock", "pong", nullptr};
 
-// Which programs get a window. Must stay index-aligned with executables[].
-bool executable_draws[] = {false, false, false, false};
+// Vestigial: windows are now claimed at runtime via init_canvas(), not preset
+// here. Kept index-aligned in case anything still reads it.
+bool executable_draws[] = {false, false, false, false, false};
 
-void klib_init() {
-    *(void(**) (const char*, va_list))F_VPRINTF = vprintf;
-    //*(void(**) (void))F_YIELD = vyield;
-    *(void (**)(void))F_YIELD = yield_entry;
-    *(char (**)(void))F_GETC = console_getc;
-    *(int32 (**)(void))F_HASC = console_hasc;
-    *(uint64 (**)(void))F_UPTIME = uptime_ms;                       // Quest 3D: `uptime`
-    *(int (**)(uint32, struct proc_info*))F_PS = get_proc_info;     // Quest 3D: `ps`
-    *(struct canvas* (**)(void))F_GET_CANVAS = get_canvas;         // Quest 4A: `get_canvas`
-    *(void (**)(void))F_VSYNC = wait_for_vsync;
-}
+// Trampolines removed: every kernel service user programs once reached through
+// a fixed F_* address is now a real system call. The kernel no longer publishes
+// anything at a fixed address for user programs to find.
+// void klib_init() { ... F_VPRINTF / F_YIELD / F_GETC / F_HASC / F_UPTIME /
+//                        F_PS / F_GET_CANVAS / F_VSYNC installs ... }
 
 void kernel_main(void) {
 	uart_init();
     gpio_init();
-    klib_init();
+    // klib_init();   // removed: no more fixed-address trampolines
     printf("Hello world from Duckie!\r\n");
     exception_init(exception_vector_table);
     enable_interrupt_controller();
@@ -80,11 +77,14 @@ void kernel_main(void) {
     console_init();
     fb_init();
     struct fb_info* fb = fb_get();
-    for(uint32 y = 0 ; y < fb->height; y++){
-        for(uint32 x = 0 ; x < fb->width; x++){
-            *(fb->pixels + (y*fb->pitch_w + x)) = 0xFF0000FF;
-        }
-    }
+    (void)fb;
+    // Leftover debug fill: paints only one framebuffer half red, so the vsync
+    // flip alternated red/white. Disabled; fb_init already clears both halves.
+    // for(uint32 y = 0 ; y < fb->height; y++){
+    //     for(uint32 x = 0 ; x < fb->width; x++){
+    //         *(fb->pixels + (y*fb->pitch_w + x)) = 0xFF0000FF;
+    //     }
+    // }
     asm volatile("msr CNTKCTL_EL1, %0" :: "r"((uint64)CNTKCTL_VALUE));
     //NORMAL kernel
     init(); 

@@ -142,6 +142,85 @@ void vsprintf(char* out, const char* fmt, va_list args) {
   *p = '\0';
 }
 
+// Bounded version of vsprintf: never writes more than `size` bytes into `out`
+// (the terminating NUL included). Returns the number of bytes placed in `out`,
+// excluding the NUL. Every emit goes through PUT, which drops the byte once
+// `p` reaches `end`, so the buffer can never overflow.
+int vsnprintf(char* out, uint64 size, const char* fmt, va_list args) {
+  char buf[32];
+  char* p = out;
+  char* end = (size > 0) ? out + size - 1 : out;   // reserve one byte for '\0'
+#define PUT(ch) do { if (p < end) *p++ = (ch); } while (0)
+  while (*fmt != '\0') {
+    char c = *fmt++;
+    if (c != '%') { PUT(c); continue; }
+
+    int width = 0;
+    if (*fmt == '0') {
+      fmt++;
+      while (*fmt >= '0' && *fmt <= '9') { width = width * 10 + (*fmt - '0'); fmt++; }
+    }
+    int is_long = 0;
+    if (*fmt == 'l') { is_long = 1; fmt++; }
+
+    char spec = *fmt++;
+    switch (spec) {
+      case 'd': {
+        int64 v = is_long ? va_arg(args, int64) : (int64)va_arg(args, int32);
+        int neg = v < 0;
+        uint64 mag = neg ? (uint64)(-v) : (uint64)v;
+        int len = u64_to_str(mag, 10, buf);
+        int total = len + (neg ? 1 : 0);
+        if (neg) PUT('-');
+        for (int i = total; i < width; i++) PUT('0');
+        for (const char* q = buf; *q; ) PUT(*q++);
+        break;
+      }
+      case 'u': {
+        uint64 v = is_long ? va_arg(args, uint64) : (uint64)va_arg(args, uint32);
+        int len = u64_to_str(v, 10, buf);
+        for (int i = len; i < width; i++) PUT('0');
+        for (const char* q = buf; *q; ) PUT(*q++);
+        break;
+      }
+      case 'x': {
+        uint64 v = is_long ? va_arg(args, uint64) : (uint64)va_arg(args, uint32);
+        int len = u64_to_str(v, 16, buf);
+        for (int i = len; i < width; i++) PUT('0');
+        for (const char* q = buf; *q; ) PUT(*q++);
+        break;
+      }
+      case 'p': {
+        uint64 v = (uint64)(uintptr_t)va_arg(args, void*);
+        PUT('0'); PUT('x');
+        int len = u64_to_str(v, 16, buf);
+        for (int i = len; i < width; i++) PUT('0');
+        for (const char* q = buf; *q; ) PUT(*q++);
+        break;
+      }
+      case 'c': { PUT((char)va_arg(args, int32)); break; }
+      case 's': {
+        const char* s = va_arg(args, char*);
+        for (const char* q = (s != 0 ? s : "[null]"); *q; ) PUT(*q++);
+        break;
+      }
+      case '%': { PUT('%'); break; }
+      case '\0': {
+        for (const char* q = "[bad fmt]"; *q; ) PUT(*q++);
+        goto done;
+      }
+      default: {
+        for (const char* q = "[bad fmt]"; *q; ) PUT(*q++);
+        break;
+      }
+    }
+  }
+done:
+  if (size > 0) *p = '\0';
+#undef PUT
+  return (int)(p - out);
+}
+
 // Part E: emit a whole message without being preempted mid-line. Mask IRQs
 // around the output path and restore the caller's previous state afterward.
 

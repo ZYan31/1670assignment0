@@ -73,7 +73,7 @@ struct pong_canvas {
 // Quest 3: the whole screen, as your kernel describes it in struct fb_info.
 // Quest 4: the canvas your kernel gave this process.
 static int pong_get_canvas(struct pong_canvas* c) {
-  struct canvas* cv = get_canvas();   // this process's window, or NULL
+  struct canvas* cv = init_canvas();   // claim this process's window, or NULL
   if (cv == nullptr) {
     return 0;
   }
@@ -88,7 +88,7 @@ static int pong_get_canvas(struct pong_canvas* c) {
 //
 // Quests 3 and 4: nothing to do. Quest 5: set your canvas's "changed" flag.
 static void pong_frame_done(void) {
-  get_canvas()->changed = 1;   // we do our own drawing, so tell the compositor to copy us
+  init_canvas()->changed = 1;   // we do our own drawing, so tell the compositor to copy us
 }
 
 // Wait until it is worth drawing another frame.

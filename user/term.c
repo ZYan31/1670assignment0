@@ -39,14 +39,13 @@ static void run_command(term_t *term, char *line){
     } else if (strcmp(line, "echo") == 0){
         term_printf(term, "%s\n", rest);
     } else if (strcmp(line, "ps") == 0){
-        struct proc_info info;
+        struct proc_info info[16];            // 16 == kernel NPROC
+        int n = process_info(info, 16);       // one syscall fills the whole array
         term_printf(term, "PID  NAME       STATE\n");
-        for (uint32 i = 0; i < 16; i++){      // 16 == kernel NPROC
-            if (get_proc_info(i, &info))
-                term_printf(term, "%d    %s    %s\n", info.pid, info.name, info.state);
-        }
+        for (int i = 0; i < n; i++)
+            term_printf(term, "%d    %s    %s\n", info[i].pid, info[i].name, info[i].state);
     } else if (strcmp(line, "uptime") == 0){
-        uint64 ms = uptime_ms();
+        uint64 ms = ticks();
         term_printf(term, "up %lu.%lu s\n", ms / 1000, (ms % 1000) / 100);
     } else if (line[0] != '\0'){
         term_printf(term, "unknown command: %s\n", line);
@@ -55,7 +54,7 @@ static void run_command(term_t *term, char *line){
 
 int main(void){
     term_t term;
-    struct canvas *c = get_canvas();   // our window's canvas, or NULL if we have none
+    struct canvas *c = init_canvas();   // claim a window + canvas, or NULL if none free
     if (!c) {
         printf("term: no canvas, nothing to draw\r\n");
         for (;;) yield();
