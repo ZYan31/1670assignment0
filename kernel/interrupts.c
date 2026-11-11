@@ -1,4 +1,5 @@
 #include "interrupts.h"
+#include "syscall.h"   // sys_exit(): kill a faulting process via the exit handler
 
 int64 timer;
 
@@ -42,18 +43,8 @@ void handle_el0_sync(context_t* ctx){
         if(0x20 <= ex_class && ex_class <= 0x25){
             printf("  FAR_EL1 = %p\r\n", (void*)far);
         }
-        proc_close_fds(p);   // release the dying process's file descriptors
-        p->state = UNUSED;
-        p->usesBuf = false;
-        if(foreground_pid == (int32)p->processID){
-            foreground_pid = 0;
-            for (int i = 1; i <= NPROC+1; i++){
-                if (process_table[(foreground_pid + i) % NPROC].usesBuf) { 
-                    foreground_pid =(foreground_pid + i) % NPROC; break;}
-            }
-        }
-        p->usesScreen = false;
-        scheduler();
+        ctx->regs[0] = -1;
+        sys_exit(ctx);
     }
     //panic("handle_el0_sync: unhandled EL0 synchronous exception");
 }

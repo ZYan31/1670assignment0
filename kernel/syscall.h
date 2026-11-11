@@ -9,18 +9,17 @@
 #define SYS_process_info 6
 #define SYS_init_canvas 7
 #define SYS_wait_for_vsync 8
+#define SYS_spawn 9
+#define SYS_exit 10
+#define SYS_wait 11
 // Reserved for later syscalls. Each SYS_* line auto-generates a user stub of
-// the same name, so these stay commented until implemented -- and note
-// exit already exists as a library function in u_common.c, so that name
-// will collide unless the stub replaces the C function.
-// #define SYS_spawn 9
-// #define SYS_exit 10
-// #define SYS_wait 11
-// #define SYS_pipe 12
-// #define SYS_close 13
+// the same name, so these stay commented until implemented.
+#define SYS_pipe 12
+#define SYS_close 13
 // #define SYS_open_console 51
 #include "types.h"
 #include "context.h"
 [[noreturn]] void handle_syscall(context_t* ctx, uint64 num);
 void syscall_init(void);
+int64 sys_exit(context_t* ctx);   // the SYS_exit handler; also called by the fault handler
 #endif

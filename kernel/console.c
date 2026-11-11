@@ -38,7 +38,7 @@ void console_handle_input(char c){
 
 char console_getc(){
     while(current_process->input_buf.count == 0){
-        if (foreground_pid == 0){
+        if (foreground_pid == 0 || is_ancestor((uint32)foreground_pid, current_process)){
             foreground_pid = current_process->processID;
         }
         current_process->usesBuf = true;
@@ -48,7 +48,7 @@ char console_getc(){
 }
 
 int32 console_hasc(){
-    if (foreground_pid == 0){
+    if (foreground_pid == 0 || is_ancestor((uint32)foreground_pid, current_process)){
         foreground_pid = current_process->processID;
     }
     current_process->usesBuf = true;

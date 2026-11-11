@@ -6,6 +6,31 @@ struct proc process_table[NPROC];
 struct proc* current_process;
 // static uint32 nwin = 0;   // moved to init(): windows are laid out there now
 
+// Is pid `anc` an ancestor of p? Walk p's parent chain, bounded so it can
+// never loop, stopping at the root (idle = pid 0).
+bool is_ancestor(uint32 anc, struct proc* p){
+      uint32 cur = p->ppid;
+      for (int steps = 0; steps < NPROC; steps++){
+          if (cur == anc) return true;
+          if (cur == 0) break;                 // reached idle/root
+          cur = process_table[cur].ppid;
+      }
+      return false;
+  }
+
+// Closest ancestor of p that is a live keyboard reader, or -1 if none.
+int closest_reader_ancestor(struct proc* p){
+    uint32 cur = p->ppid;
+    for (int steps = 0; steps < NPROC; steps++){
+        if (cur == 0) break;
+        struct proc* a = &process_table[cur];
+        if (a->usesBuf && a->state != ZOMBIE && a->state != UNUSED)
+            return (int)cur;
+        cur = a->ppid;
+    }
+    return -1;
+}
+
 struct proc *allocproc(){
     //preempt_disable();
     struct proc *p = 0;
@@ -22,6 +47,7 @@ struct proc *allocproc(){
             p -> priority = (i+1) * PRIORITY_SCALE;
             rb_init(&p->input_buf);
             p->usesBuf = false;
+            p->ppid = 0;                 // default: root/no parent; spawn() overrides
             //initializing the canvases for each process via framebuffer.
             struct fb_info* fb = fb_get();
             //address of base of proc mem + canvas offset.
@@ -48,11 +74,8 @@ struct proc *allocproc(){
             break;
         }
     }
-    if (!p){
-        panic("allocproc: no free slot (NPROC=%d)", NPROC);
-    }
     //preempt_enable();
-    return p;
+    return p;   // null if the table was full -- caller handles it, no panic
 };
 
 // Map a file-descriptor number to the file it refers to in the current
@@ -79,6 +102,8 @@ static const char* procstate_name(enum procstate s){
         case UNUSED:   return "UNUSED";
         case USED:     return "USED";
         case RUNNABLE: return "RUNNABLE";
+        case BLOCKED:  return "BLOCKED";
+        case ZOMBIE:   return "ZOMBIE";
         default:   return "RUNNING";
     }
 }
@@ -99,7 +124,7 @@ int get_proc_info(uint32 index, struct proc_info* out){
     if (p->state == UNUSED) return 0;
 
     out->pid = p->processID;
-    out->ppid = 0;              // no parent/child relationship in this kernel
+    out->ppid = p->ppid;        // real parent, for `ps`
 
     uint32 i = 0;
     for (; i < PROCNAME_MAXLEN - 1 && p->procName[i]; i++)

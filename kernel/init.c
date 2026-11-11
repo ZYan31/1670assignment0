@@ -1,40 +1,31 @@
 #include "proc.h"
 #include "elf.h"
 #include "types.h"
+#include "userprogs.h"   // find_program(), struct proginfo
 
-// Defined in kernel.c
-extern char* executables[];
-extern char* executable_names[];
-extern bool  executable_draws[];   // index-aligned: does program i get a window?
+// The programs init() starts at boot, in this order. idle MUST be first so it
+// gets PID 0. Everything else is launched from userspace (term spawns them).
+//
+// Keep this array global and named exactly `boot_programs`: the build's
+// user/gen_user_symbols.py reads it from the kernel ELF to tell GDB which
+// program runs as which PID.
+const char* boot_programs[] = {"idle", "term"};
 
-// Added in Project 4. The diab_* programs (in user/diabolical/) misbehave on
-// purpose (Quest 1); snake is a program we compiled for you (Quest 4, Part D),
-// which the build embeds from user/prebuilt/snake.elf. basic_serial exists
-// once you create user/basic_serial.c (Quest 3).
-extern unsigned char _binary_user_diab_brk_elf_start[];
-extern unsigned char _binary_user_diab_irqoff_elf_start[];
-extern unsigned char _binary_user_diab_timer_elf_start[];
-extern unsigned char _binary_user_diab_vectors_elf_start[];
-extern unsigned char _binary_user_diab_crash_elf_start[];
-extern unsigned char _binary_user_diab_stack_elf_start[];
-extern unsigned char _binary_user_basic_serial_elf_start[];  // Quest 3
-extern unsigned char _binary_user_snake_elf_start[];  // Quest 4 (provided)
-
-// NOTE: this still loads from the executables[]/executable_names[] arrays in
-// kernel.c. The Q5 quest rewrites it to use find_program() (userprogs.h) and
-// drop those arrays -- done as the next step, after the merge.
 void init() {
-    // static uint32 nwin = 0;   // windows are now claimed on demand via init_canvas()
-    for (int i = 0; executables[i] != nullptr; i++) {
+    for (uint64 i = 0; i < sizeof(boot_programs) / sizeof(boot_programs[0]); i++) {
+        struct proginfo* prog = find_program(boot_programs[i]);
+        if (prog == nullptr) {
+            panic("init: there is no program called '%s'", boot_programs[i]);
+        }
         struct proc* p = allocproc();
-        // No strcpy in this freestanding kernel: bounded manual copy.
+        // No strcpy in this freestanding kernel: bounded manual copy of the name.
         uint32 j = 0;
-        while (executable_names[i][j] != '\0' && j < PROCNAME_MAXLEN - 1) {
-            p->procName[j] = executable_names[i][j];
+        while (prog->name[j] != '\0' && j < PROCNAME_MAXLEN - 1) {
+            p->procName[j] = prog->name[j];
             j++;
         }
         p->procName[j] = '\0';
-        load_elf_into_proc((struct elf_header*)executables[i], p);
+        load_elf_into_proc((struct elf_header*)prog->elf_start, p);
         p->state = RUNNABLE;
     }
 }

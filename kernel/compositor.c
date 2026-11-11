@@ -4,9 +4,13 @@
 #define BORDER_NORMAL 0xFFFFFFFFu   // white
 #define BORDER_FOCUS  0xFF00FF00u   // bright green: the focused window
 
+#define BG_COLOR      0xFFFFFFFFu  // desktop background: fb.c paints both halves white once
+
 static uint32 owed[NPROC];         // framebuffer halves this window still owes a copy to (0..2)
 static int    border_owed = 0;     // framebuffer halves still owed a border redraw after a focus move
 static uint32 last_fg = 0xFFFFFFFFu;  // foreground_pid last seen, so we can notice focus moving
+static uint32 clear_owed[NPROC];   // halves still owed a background wipe after this window closed
+static bool   was_shown[NPROC];    // was this window composited last frame?
 
 // Fill a w x h rectangle of the back buffer at (x, y) with a solid color.
 static void fill(struct fb_info* fb, uint32 back, uint32 x, uint32 y,
@@ -38,6 +42,18 @@ void compositor_tick(){
             struct proc* proxy = &process_table[i];
             struct canvas *c = proxy->proc_canvas;
             uint32* src = (uint32*)proxy->canvas_pixels;
+
+            // A window that just closed (shown last frame, gone now) owes a wipe
+            // to BOTH halves; paint its area (content + 2px border) back to the
+            // desktop background, or its stale pixels linger (e.g. BASIC's green
+            // frame after BYE).
+            if (was_shown[i] && !proxy->usesScreen) clear_owed[i] = 2;
+            was_shown[i] = proxy->usesScreen;
+            if (!proxy->usesScreen && clear_owed[i] > 0){
+                fill(fb, back, proxy->window.x - 2, proxy->window.y - 2,
+                     proxy->window.w + 4, proxy->window.h + 4, BG_COLOR);
+                clear_owed[i]--;
+            }
 
             // A completed new frame owes a copy to BOTH halves, so arm the counter to 2.
             if(proxy->usesScreen && c->changed){ owed[i] = 2; c->changed = 0; }

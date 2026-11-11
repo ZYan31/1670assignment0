@@ -62,6 +62,8 @@ struct proc_info {
 struct proc *allocproc();
 void proc_close_fds(struct proc* p);  // release p's open fds (on exit/kill)
 struct file* fd_lookup(int fd);       // current proc's fd -> file*, or null
+bool is_ancestor(uint32 anc, struct proc* p);     // is `anc` in p's parent chain?
+int  closest_reader_ancestor(struct proc* p);     // nearest reader ancestor, or -1
 void print_process_table();
 struct canvas* get_canvas();
 

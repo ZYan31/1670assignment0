@@ -982,7 +982,8 @@ interperateAtTxtpos:
 			goto execline;
 		case KW_BYE:
 			// Leave the basic interperater
-			return;
+			// return;                 // old: unwinds to main's while(1), restarts prompt
+			exit(0);                    // exit the process so focus returns to the terminal
 		case KW_PINOUT:
 			goto pinout;
 		case KW_DELAY:

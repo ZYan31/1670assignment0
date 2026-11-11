@@ -107,6 +107,9 @@ int main(void) {
               name_y, OUTLN, name, scale_n);
   draw_string(&screen, ((int)screen.width - cap_w) / 2,
               cap_y, OUTLN, caption, scale_c);
+  // We drew into a local copy of the canvas header, so cv->changed was never
+  // set. Flag the REAL canvas so the compositor copies our pixels (like clock).
+  cv->changed = 1;
   for (;;) {
     yield();
   }

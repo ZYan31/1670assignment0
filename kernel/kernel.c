@@ -21,43 +21,11 @@
 
 typedef void (*vprintf_fn)(const char*, va_list);
 //making a printf_fn that is the right space/size for the pointer.
-extern char _binary_user_idle_elf_start[];
-extern char _binary_user_logo_elf_start[];
-extern char _binary_user_basic_elf_start[];
-extern char _binary_user_hello_elf_start[];    // Linker-generated, already exists in `init.c`
-extern char _binary_user_counter_elf_start[];         // same
-extern char _binary_user_primecheck_elf_start[]; // same
-extern char _binary_user_keytest_elf_start[];    // Quest 2: echoes keystrokes via getc()
-extern char _binary_user_term_elf_start[];       // Quest 3 Part D: framebuffer terminal
-extern char _binary_user_pong_elf_start[];       // Quest 3: bouncing box (tearing demo)
-extern char _binary_user_clock_elf_start[];      // Quest 4: clock in its own window
-extern char _binary_user_diab_brk_elf_start[];       // Project 4 Q1.
-extern char _binary_user_diab_crash_elf_start[];
-extern char _binary_user_diab_irqoff_elf_start[];
-extern char _binary_user_diab_stack_elf_start[];
-extern char _binary_user_diab_timer_elf_start[];
-extern char _binary_user_diab_vectors_elf_start[];
 int64 (*syscall_table[64])(context_t* ctx);
-extern char _binary_user_pi_elf_start[];
-extern char _binary_user_badptr_elf_start[];
-// extern char _binary_user_squares_elf_start[];
 
-// All executables available
-char* executables[] = {
-    _binary_user_idle_elf_start,
-    _binary_user_term_elf_start,
-    _binary_user_basic_elf_start,
-    _binary_user_clock_elf_start,
-    _binary_user_pong_elf_start,
-    nullptr
-};
-
-// Names of the programs for debug output
-char* executable_names[] = {"idle", "term", "basic", "clock", "pong", nullptr};
-
-// Vestigial: windows are now claimed at runtime via init_canvas(), not preset
-// here. Kept index-aligned in case anything still reads it.
-bool executable_draws[] = {false, false, false, false, false};
+// The boot program list and the per-program symbols now live in init.c, which
+// looks programs up by name with find_program() (kernel/userprogs.h). The
+// kernel no longer keeps an executables[] array or _binary_* externs here.
 
 // Trampolines removed: every kernel service user programs once reached through
 // a fixed F_* address is now a real system call. The kernel no longer publishes

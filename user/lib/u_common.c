@@ -33,7 +33,9 @@ int hasc(){
 //   uptime_ms()   -> ticks()         (svc #1)
 //   get_proc_info() -> process_info() (svc #6)
 
-void exit(int status) {
-  (void)status;
-  for (;;) { yield(); }
-}
+// exit() is a real syscall now (svc #10); the generated stub provides it.
+// Old userspace fallback kept for reference:
+// void exit(int status) {
+//   (void)status;
+//   for (;;) { yield(); }
+// }

@@ -25,6 +25,34 @@ static void term_backspace(term_t *term){
     fb_fill_rect(term->canvas, term->col * cell, term->row * cell, cell, cell, term->bgc);
 }
 
+// Parse a small non-negative integer from a string (for `wait <pid>`).
+static int term_atoi(const char *s){
+    while (*s == ' ') s++;
+    int v = 0;
+    while (*s >= '0' && *s <= '9'){ v = v * 10 + (*s - '0'); s++; }
+    return v;
+}
+
+// Does the argument tail mean "run in background"? True for a lone '&'.
+static int is_background(const char *s){
+    while (*s == ' ') s++;
+    return (*s == '&');
+}
+
+// Spawn `name` with the terminal's OWN fds 0 and 1 (so the child shares this
+// terminal's console). Background: print the PID and return. Foreground: wait
+// for it and print its exit status.
+static void launch(term_t *term, const char *name, int background){
+    int pid = spawn(name, 0, 1);          // 0,1 are THIS terminal's fds
+    if (pid < 0){ term_printf(term, "no such program: %s\n", name); return; }
+    if (background){
+        term_printf(term, "[%d] %s\n", pid, name);     // started, not waited on
+    } else {
+        int status = wait(pid);           // block until the child exits
+        term_printf(term, "%s exited with status %d\n", name, status);
+    }
+}
+
 // Run one finished command line.
 static void run_command(term_t *term, char *line){
     // Split the first word (the command) from the rest (its arguments).
@@ -34,6 +62,7 @@ static void run_command(term_t *term, char *line){
 
     if (strcmp(line, "help") == 0){
         term_printf(term, "commands: help  clear  echo <text>  ps  uptime\n");
+        term_printf(term, "          <prog> [&]  run <prog> [&]  wait <pid>\n");
     } else if (strcmp(line, "clear") == 0){
         term_clear(term);
     } else if (strcmp(line, "echo") == 0){
@@ -41,14 +70,29 @@ static void run_command(term_t *term, char *line){
     } else if (strcmp(line, "ps") == 0){
         struct proc_info info[16];            // 16 == kernel NPROC
         int n = process_info(info, 16);       // one syscall fills the whole array
-        term_printf(term, "PID  NAME       STATE\n");
+        term_printf(term, "PID  PPID  NAME       STATE\n");
         for (int i = 0; i < n; i++)
-            term_printf(term, "%d    %s    %s\n", info[i].pid, info[i].name, info[i].state);
+            term_printf(term, "%d    %d     %s    %s\n",
+                        info[i].pid, info[i].ppid, info[i].name, info[i].state);
     } else if (strcmp(line, "uptime") == 0){
         uint64 ms = ticks();
         term_printf(term, "up %lu.%lu s\n", ms / 1000, (ms % 1000) / 100);
+    } else if (strcmp(line, "run") == 0){
+        // Force-treat the next word as a program, even if it names a built-in.
+        char *prog = rest;
+        while (*rest && *rest != ' ') rest++;         // split prog from its tail
+        if (*rest){ *rest = '\0'; rest++; }           // rest -> maybe "&"
+        if (prog[0] == '\0')
+            term_printf(term, "run: need a program name\n");
+        else
+            launch(term, prog, is_background(rest));
+    } else if (strcmp(line, "wait") == 0){
+        int pid = term_atoi(rest);
+        int status = wait(pid);                        // block until that child exits
+        term_printf(term, "pid %d exited with status %d\n", pid, status);
     } else if (line[0] != '\0'){
-        term_printf(term, "unknown command: %s\n", line);
+        // Not a built-in: the command word is a program name. rest is "" or "&".
+        launch(term, line, is_background(rest));
     }
 }
 
