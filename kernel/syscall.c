@@ -132,6 +132,9 @@ static int64 sys_peek(context_t* ctx){
         return (int64)current_process->input_buf.count;
     } else if (f->ft == FILE_PIPE_READ){
         struct pipe* pp = f->pipe;
+        // EOF: nothing buffered and every writer has closed -> -1, so a reader
+        // (e.g. gterm's pump) can tell the far end has gone, not just "empty".
+        if (pp->buf.count == 0 && pp->wr.ref_ct == 0) return -1;
         return (int64)pp->buf.count;
     }
     return -1;
