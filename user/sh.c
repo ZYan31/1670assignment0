@@ -23,7 +23,7 @@ static int is_background(const char *s){
     return (*s == '&');
 }
 
-// Spawn `name` with the shell's OWN fds 0 and 1, so the child shares this
+// Spawn `name` with the shell's fds 0 and 1, so the child shares this
 // shell's input and output. Background: print the PID and return. Foreground:
 // wait for it and print its exit status.
 static void launch(const char *name, int background){
@@ -37,8 +37,75 @@ static void launch(const char *name, int background){
     }
 }
 
+#define MAX_STAGES 8
+
+// PARSING : split LINE on '|' into stage program names.
+// Each stage is reduced to its first word (these programs take no arguments)
+// and null-terminated in place. Returns the number of stages (<= MAX_STAGES).
+static int parse_pipeline(char *line, char *progs[]){
+    int n = 0;
+    char *p = line;
+    while (n < MAX_STAGES){
+        while (*p == ' ') p++;                         // skip spaces before name
+        char *start = p;
+        while (*p && *p != '|' && *p != ' ') p++;      // program name = first word
+        char *name_end = p;
+        while (*p && *p != '|') p++;                    // skip to the bar (ignore args)
+        int more = (*p == '|');
+        if (more) p++;                                 // step over '|'
+        *name_end = '\0';                              // terminate the name
+        if (*start) progs[n++] = start;                // keep non-empty stages
+        if (!more) break;
+    }
+    return n;
+}
+
+// Run n programs connected by n-1 pipes. For each pair of neighbors make one
+// pipe. Spawn stage i reading from the previous pipe's READ end (or fd 0 for
+// the first stage) and writing to its own pipe's WRITE end (or fd 1 for the
+// last). After spawning them all, CLOSE every pipe end the shell still holds --
+// if you leave a write end open, the reader downstream never sees EOF. Finally,
+// unless background, wait() for all n children.
+static void run_pipeline(char *progs[], int n, int background){
+    (void)progs; (void)n; (void)background;
+    int pipefd[n - 1][2];
+    int pid[n];
+    for(int i = 0; i < n-1; i++){if(pipe(pipefd[i]) != 0){return;}}
+    
+    if(n < 2) {return;}
+    pid[0] = spawn(progs[0], 0, pipefd[0][1]);
+    for(int i = 1; i < n-1; i++){pid[i] = spawn(progs[i], pipefd[i-1][0], pipefd[i][1]);}
+    pid[n-1] = spawn(progs[n-1], pipefd[n-2][0], 1);
+
+    // Every stage is spawned now (each child holds its own copies of the fds it
+    // needs), so the shell drops ALL of its pipe ends. Closing the write ends is
+    // what lets each downstream reader eventually see EOF.
+    for (int i = 0; i < n-1; i++){ close(pipefd[i][0]); close(pipefd[i][1]); }
+
+    if (!background){ for(int i = 0; i < n; i++){wait(pid[i]);} }
+    return;
+}
+
 // Run one finished command line.
 static void run_command(char *line){
+    // A '|' anywhere makes this a pipeline. Detect it before the single-command
+    // logic, honoring an optional leading "run " and a trailing "&".
+    for (char *q = line; *q; q++){
+        if (*q == '|'){
+            int bg = 0;
+            char *s = line;
+            if (s[0]=='r' && s[1]=='u' && s[2]=='n' && s[3]==' ') s += 4;  // "run "
+            int len = (int)strlen(s);
+            while (len > 0 && s[len-1] == ' ') s[--len] = '\0';           // trim end
+            if (len > 0 && s[len-1] == '&'){ bg = 1; s[--len] = '\0'; }    // background
+            char *progs[MAX_STAGES];
+            int n = parse_pipeline(s, progs);
+            if (n >= 2) run_pipeline(progs, n, bg);
+            else printf("pipeline: need two or more programs\n");
+            return;
+        }
+    }
+
     // Split the first word (the command) from the rest (its arguments).
     char *rest = line;
     while (*rest && *rest != ' ') rest++;

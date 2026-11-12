@@ -9,7 +9,7 @@
 // Keep this array global and named exactly `boot_programs`: the build's
 // user/gen_user_symbols.py reads it from the kernel ELF to tell GDB which
 // program runs as which PID.
-const char* boot_programs[] = {"idle", "term"};
+const char* boot_programs[] = {"idle", "vtty"};
 
 void init() {
     for (uint64 i = 0; i < sizeof(boot_programs) / sizeof(boot_programs[0]); i++) {

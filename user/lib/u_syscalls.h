@@ -17,4 +17,5 @@ void wait_for_vsync(void);
 int spawn(const char* name, int stdin_fd, int stdout_fd);
 int pipe(int* fds);     // fds[0]=read end, fds[1]=write end; 0 on success, -1 on failure
 int close(int fd);
+int open_console(void);  // new console fd (lowest free); read=keyboard, write=serial
 #endif

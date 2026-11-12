@@ -30,16 +30,6 @@
 #include "u_vterm.h"    // term_t, term_init/term_putc/term_clear  (the text console)
 #include "u_string.h"   // strlen
 
-// ===========================================================================
-// Terminal-emulator DRAWING  (AI-allowed: "the terminal emulator's drawing")
-// ---------------------------------------------------------------------------
-// Shell output is a byte stream of plain text plus a few ANSI escape sequences.
-// We draw plain text through the on-canvas text console (u_vterm), and we honor
-// exactly two escapes -- ESC[2J (clear screen) and ESC[H (cursor home), which
-// are what sterm_clear() emits. Every other escape sequence is swallowed and
-// ignored (so escape-art programs like snake simply won't render here).
-// ===========================================================================
-
 enum { E_NORMAL, E_ESC, E_CSI };   // escape-sequence state: text, saw ESC, saw ESC[
 
 typedef struct {
@@ -75,20 +65,31 @@ static void emu_putc(emulator_t* e, char ch){
     }
 }
 
-// Draw a run of shell-output bytes. The pump calls this with each chunk it
-// reads from the shell's output pipe.
 static void emu_draw(emulator_t* e, const char* buf, int n){
     for (int i = 0; i < n; i++) emu_putc(e, buf[i]);
 }
 
-// ===========================================================================
 int main(void){
     struct canvas* c = init_canvas();
     if (!c){ printf("gterm: no canvas, nothing to draw\r\n"); for(;;) yield(); }
     emulator_t emu;
     emu_init(&emu, c);
-    
-    const char* msg = "gterm: emulator ready. Wire the pump to sh.\r\n";
-    emu_draw(&emu, msg, (int)strlen(msg));
-    for (;;) yield();
+    //what needs to be done.
+    int in[2], out[2], n, g, o, kbd;
+    kbd = open_console();
+    close(0);
+    pipe(in);
+    pipe(out);
+    char buf[128];
+    int sh_pid = spawn("sh", in[0], out[1]);
+    close(in[0]);
+    close(out[1]);
+    while(true){
+        n = peek(kbd);
+        if (n <= 0) {yield();}
+        if (n > 0) {g = read(kbd, buf, sizeof(buf)); write(in[1], buf, g);}
+        o = peek(out[0]);
+        if (o < 0) {wait(sh_pid); exit(0);}
+        if (o > 0) {g = read(out[0], buf, sizeof(buf)); emu_draw(&emu, buf, g);}
+    }
 }

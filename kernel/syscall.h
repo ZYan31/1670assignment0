@@ -16,7 +16,7 @@
 // the same name, so these stay commented until implemented.
 #define SYS_pipe 12
 #define SYS_close 13
-// #define SYS_open_console 51
+#define SYS_open_console 51
 #include "types.h"
 #include "context.h"
 [[noreturn]] void handle_syscall(context_t* ctx, uint64 num);

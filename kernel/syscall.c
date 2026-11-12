@@ -293,12 +293,15 @@ static int64 sys_close(context_t* ctx){
     return 0;
 }
 
-// Placeholder stubs for later syscalls. Commented out until implemented:
-// empty non-void bodies + unused ctx trip -Werror.
-//
-// static int64 open_console(context_t* ctx){
-//
-// }
+static int64 sys_open_console(context_t* ctx){
+    (void)ctx;
+    int lo = -1;
+    for(int i = 0; i < MAX_NUM_FDS; i++){if(!current_process->fd_table[i]){lo = i; break;}}
+    if(lo < 0){return -1;} 
+    current_process->fd_table[lo] = &console;
+    console.ref_ct++;
+    return lo;
+}
 
 [[noreturn]] void handle_syscall(context_t* ctx, uint64 exc){
     current_process->context = ctx;
@@ -326,4 +329,5 @@ void syscall_init() {
     syscall_table[SYS_wait] = sys_wait;
     syscall_table[SYS_pipe] = sys_pipe;
     syscall_table[SYS_close] = sys_close;
+    syscall_table[SYS_open_console] = sys_open_console;
 }
